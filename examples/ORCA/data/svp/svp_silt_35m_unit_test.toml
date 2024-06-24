@@ -1,0 +1,129 @@
+# ORCA NORMAL MODE MODEL SETTINGS
+#
+# This YAML File is an updated configuration file to interface with ORCA
+# Follow the comments for directions, as all comments are proceeded with '#'
+#
+# This YAML File assumes version 2.0 of the ORCA opt files
+
+# -------
+# SECTION 1: General Set-up
+# -------
+# Insert the name of the file here. Not necessarily filename.
+svp_title = "svp_sand_iso"
+
+
+# -------
+# SECTION 2: Upper Halfspace
+# -------
+[upper_halfspace]
+# speed of sound
+cp = 343.0
+cs = 0.0
+# density
+rho = 0.00121
+# attenuation
+ap = 0.0
+as = 0.0
+
+
+# -------
+# SECTION 3: SVP Points and Tolerance
+# -------
+[svp_ctol]
+# tolerance used in fitting SVP to eliminate layers
+# use 0 to keep all layers
+ctol = 0
+
+
+# -------
+# SECTION 4: Ocean SVP Profile
+# -------
+# Make sure that section 3 includes the correct number of SVP points
+[ocean_svp]
+# will you be using constant rho and ap?
+constant_rho_ap = true
+# constant rho (will be added on the first line)
+rho = 1
+# constant ap
+ap = 0
+
+# The ocean SVP points. If constant rho and ap was not selected, include them
+# in each layer
+# layers can be either a list of lists (the current example) or a dictionary of pairs
+# seen below.
+# list version MUST follow pattern of [z, cp] (if constant is false)
+# or [z, cp, rho, ap]  (if constant is true)
+
+# if constant_rho_ap is set to false, the list and dictionary *must* include rho and ap
+# values for each defined layer
+# sidenote, ALL values in a TOML array must be of the same type, so just add a .0
+layers = [
+    [0.0, 1500.0],
+    [75.0, 1500.0]
+]
+
+
+# -------
+# SECTION 6: Bottom Layer Profiles
+# -------
+# Make sure that section 5 includes the correct number of bottom layers
+# There are three different types of profiles that can be entered.
+# Use "linear", "blug1", "blug2", "blug3" and include the following:
+#   type: linear
+#     h  cp1 cp2  cs1 cs2  rho1 rho2  ap1 ap2  as1 as2
+#   type: blug1
+#     h  cp1   g  cs1 cs2  rho1 rho2  ap1 ap2  as1 as2  beta ctol
+#   type: blug2
+#     h  cp1 cp2  cs1 cs2  rho1 rho2  ap1 ap2  as1 as2  beta ctol
+#   type: blug3
+#     h  cp1 cp2  cs1 cs2  rho1 rho2  ap1 ap2  as1 as2     g ctol
+# just make sure that each object in the list contains the elements requested
+# by the type.
+[[layer_profiles]]
+type = "linear"
+h = 35.0
+cp1 = 1575.0
+cp2 = 1610.0
+cs1 = 0
+cs2 = 0  
+rho1 = 1.7
+rho2 = 1.7
+# a = positive value are interpreted as dB/mkHz
+# a = negative values are interpreted as abs(a) in dB/lambda
+ap1 = 0.63
+ap2 = 0.63
+as1 = 0
+as2 = 0  
+
+
+[[layer_profiles]]
+type = "linear"
+h = 100.0
+cp1 = 5250.0
+cp2 = 5250.0
+cs1 = 0
+cs2 = 0
+rho1 = 2.7
+rho2 = 2.7
+# a = positive value are interpreted as dB/mkHz
+# a = negative values are interpreted as abs(a) in dB/lambda
+ap1 = 0.02
+ap2 = 0.02
+as1 = 0
+as2 = 0
+# -------
+# SECTION 7: Lower Halfspace
+# -------
+[lower_halfspace]
+cp = 6000.0
+cs = 0
+rho = 5.0
+# a = positive value are interpreted as dB/mkHz
+# a = negative values are interpreted as abs(a) in dB/lambda
+ap = 0.83
+as = 0   
+
+# Section 8: Top Layers
+# This is unsupported since we have no use for it. It could be useful for
+# oil in the future.
+
