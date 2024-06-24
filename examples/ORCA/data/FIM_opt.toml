@@ -1,0 +1,436 @@
+# ORCA NORMAL MODE MODEL SETTINGS
+#
+# This TOML File is an updated configuration file to interface with ORCA
+# Follow the comments for directions, as all comments are proceeded with '#'
+#
+# This TOML File assumes version 2.0 of the ORCA opt files
+
+# -------
+# SECTION 1: Types of Computation
+# -------
+[computation_config]
+# Mode Computations
+#   - 0 for no computations
+#   - 1 for CW
+#   - 2 for broadband
+iicw = 1
+# Complex k-plane images
+#   - 0 for none
+#   - 1 for ln(R1*R2)
+#   - 2 for ln(1-R1*R2)
+iikpl = 2
+# PW Reflection Coefficient
+#   - 0 for none 
+#   - 1 for R vs angle, f
+#   - 2 for FFT file vs. angle
+iirc = 0
+# Parameter Study
+#   Parameter study uses iicw, iikpl, iirce
+#   - 0 for no
+#   - 1 for yes
+iiparm = 0
+# Geoacoustic Profile
+#   Outputs a geoacoustics profile file (_prof)
+#   - 0 for no
+#   - number of depth pts (an integer)
+n_env = 0
+# Output Format
+#   Select output format
+#   - 1 for HDF
+#   - 2 for MAT
+#   - 3 for ASCII (RECOMMENDED)
+#   - 4 for all types
+iifmt = 3
+
+
+# -------
+# SECTION 2: Mode Computation General Parameters
+# -------
+# Note: Set all to 0 to find modes automatically
+
+[mode_config]
+# Real Axis Version
+#   - 0 for no
+#   - 1 for yes
+iirx = 0              #ALWAYS USE COMPLEX VERSION! (10/29/2020, bug in real creates striations and leaky modes)
+# Min Phase Speed
+#   - 0 for p-wave modes only
+#   - number for the minimum phase speed
+#   - -1 for seismic modes also
+cphmin = 0
+# Max Phase Speed
+#   - 0 to just use the minimum
+#   - number for the maximum phase speed
+#   - negative number for maximum angle in degrees
+cphmax = 0                                            #was 1700, changed to not interfere with number of modes chosen?
+# Min Range of Interest in km
+#   - >999 to use cphmax
+#   - number for range
+#   - 0 to use S/R geometry
+rmin = 0.1                                            #check if we can set this to zero. How many modes does ORCA use?
+# Max range of Interest
+#   - 0 to use S/R geometry - NOT WORKING WITH UWLIB (9/29/2020)
+#   - number for range
+rmax = 15
+# Phase Step Parm
+#   Step by 2*pi/phfac
+#   - Set to 4-8
+#   - 0 for default (4)
+phfac = 8       #Was 8, changed because was always getting 99 modes
+# Modes Weaker by db_cut Ignored
+#   Removes the modes weaker than specified dB value
+#   - Set between 0 and 120
+#   - 0 for default (50)
+db_cut = 80                                      # was 0, changed to capture more modes in the calculation
+# Gradient Lower h-space
+#   - 0 for default 
+#   - -1 for homogeneous
+#   - greater than 0 to set to da_bar
+Aih_l = 0
+# Gradient Upper h-space
+#   - 0 for default
+#   - -1 for homogeneous
+#   - greater than 0 to set to da_bar
+Aih_u = -1
+# Gaussian Beam Source
+#   - 0 for no
+#   - 1 for yes
+#   If set to yes, add the beam angle and beamwidth for each source depth
+#   in sections 5 or 8
+iigbs = 0
+# Print Diagnostic Messages
+#   - 0 for no
+#   - 1 for yes
+iidiag = 0
+
+# -------
+# SECTION 3: CW Node Frequencies
+# -------
+# Note: this section is only applied if iicw is set to 1 in Section 1
+
+[cw_frequencies]
+# Will you list the frequencies?
+list = true
+# Number of Frequencies
+nf = 1
+# List of Frequencies (in Hz)
+#   This must be a TOML list of frequencies
+#   The length of this list must also be equal to nf set above
+items = [
+  200
+]
+min = 200
+max = 400
+
+
+# -------
+# SECTION 4: CW Output Options
+# -------
+
+[cw_out_config]
+# TL
+#   - 0 for no
+#   - 1 for zs, zr, and r (see Section 5)
+#   - 2 for source track/rec array in Section 10
+iitl = -1
+# Mode Functions
+#   - 0 for no
+#   - 1 for p-wave
+#   - 2 for s-wave
+#   - 3 for both
+#   Enter the depths in Section 6
+iimf = 1
+# Display uz, ux, and Stress sigzz, sigzx
+#   - 0 for no
+#   - 1 for yes
+iisig = 0
+# Mode Trajectory in k-plane
+#   Associated ASCII file
+#   - 0 for no
+#   - 1 for yes
+iimt = 0
+# Disp Curves
+#   - 0 for no
+#   - 1 for vg
+#   - 2 for vph
+#   - 3 for both
+iidc = 3
+# Mode Eigenvalues
+#   Re(kn), Im(kn)
+#   TODO: Figure this one out
+iikn = 1
+# List of Eigenvalue Characteristics
+#   TODO: Yeah, what do the values mean?
+iieig = 0
+# Output Various Files to Use in Other Programs
+#   - iikrak: Kraken
+#   - iioas: OASES
+#   - iifepe: FEPE
+#   - iimlab: MODELAB
+#   - 0 for no
+#   - 1 for yes
+iikrak = 0
+iioas = 0
+iifepe = 0
+iimlab = 0
+
+
+# -------
+# SECTION 5: Source Depths, Reciever Depths, and Ranges
+# -------
+# source_depths creates an object with various bits of information.
+#
+# If you wish to specify individual source depths, set source_depths.list
+# to true and then within source_depths.items, list the individual depths
+# in meters.
+# TODO: clean this section - I have to double check how this all works
+[source_depths]
+list = true
+# list the source depths themselves
+# 6 is generally a default for a surface ship
+items = [
+  6
+]
+# values for if list is set to False
+num = 50
+min = 1
+max = 99
+
+# receiver_depths works the same way as source_depths
+[receiver_depths]
+list = false
+items = [
+  60,
+  100
+]
+num = 200
+min = 1
+max = 120
+
+# reciever_ranges works the same way as source_depths and reciever_depths.
+# However, these values are all in kilometers.
+[receiver_ranges]
+list = false
+items = [
+  5,
+  20,
+  25
+]
+num = 250
+min = 0.1
+max = 10
+
+
+# -------
+# SECTION 6: Mag/Phase Options and Depths
+# -------
+# Use these options if iimf is greater than 0 or iisig = 1
+[mag_phase_config]
+# TODO: What's this?
+iiri = 3
+# TODO: What's this?
+iimp = 0
+# TODO: What's this?
+
+  [mag_phase_config.mag_phase]
+  list = false
+  items = [
+    5,
+    10,
+    15
+  ]
+  num = 100
+  min = 1
+  max = 130
+
+
+# -------
+# SECTION 7: BB Mode Computation Parameters
+# -------
+[bb_config]
+# Sample Frequency
+fs = 512
+# NFFT or Time Window
+#   - positive number: NFFT
+#   - negative number: time window in S
+nfft_Tw = 256
+# Minimum Frequency
+fmin = 90
+# Maximum Frequency
+fmax = 250
+# Output FFT File
+#   - 0 for no
+#   - 1 for yes, input zs, zr, and r in Section 8
+#   - 2 for yes, read file in Section 10
+iifft = 1
+# Output BB Eigenvalues and Functions
+#   - 0 for no
+#   - 1 for yes, input zs, zr, and r in Section 8
+#   - 2 for yes, read file in Section 10
+iiout = 0
+# Frequency Trajectory (ASCII)
+#   - 0 for no
+#   - 1 for yes
+iift = 0
+# Mode Trajectory (ASCII)
+#   - 0 for no
+#   - 1 for yes
+iimt = 0
+# Display Curves
+#   - 0 for no
+#   - 1 for yes
+iidc = 0
+# Mode Functions at Receiver Depth
+#   Returns mode functions at the depths defined in Section 8
+#   - 0 for no
+#   - 1 for 2D HDF
+#   - 2 for 3D HDF
+iimf = 0
+
+
+# -------
+# SECTION 8: Depths and Ranges for IIFFT, IIOUT or IIMF
+# -------
+# Source information to use with IIFFT and IIOUT
+#   If list is set to true, the script looks at items. If false, it uses num,
+#   min, and max
+[ii_source]
+list = true
+items = [
+  36
+]
+num = 10
+min = 5
+max = 20
+
+# Reciever depths information to use with IIFFT and IIOUT
+#   If list is set to true, the script looks at items. If false, it uses num,
+#   min, and max
+[ii_depths]
+list = true
+items = [
+  70
+]
+num = 10
+min = 5
+max = 40
+
+# Reciever range information to use with IIFFT and IIOUT (km)
+#   If list is set to true, the script looks at items. If false, it uses num,
+#   min, and max
+#   This uses km instead of meters
+[ii_ranges]
+list = false
+items = [
+  2,
+  10
+]
+num = 5
+min = 0.5
+max = 0.8
+
+
+# -------
+# SECTION 9: Parameter Study
+# -------
+# TODO: adjust this to accept multiple parameter variation studies
+[iiparm_opts]
+# Number of CW mode Runs
+nrun = 10
+# Number of parameters to vary
+nparm = 1
+# Random # seed (Integer)
+#   - 0 for none (will vary linearly from val1 to val2)
+rseed = 0
+# Medium
+obt = 0
+nlay = 1
+ktb = 2
+pc = 0
+val1 = 200
+val2 = 100
+
+
+# -------
+# SECTION 10: S/R Geometry for Source Track and Rec Array
+# -------
+# this is if iitl=2 in section 4 or iifft=2 in section 8
+[sr_geom]
+# zs spacing
+zs = 36
+# number of source segments
+n_src_seg = 1
+# filename to run
+file_name = "hla_array"
+
+
+# -------
+# SECTION 11: Source Track
+# -------
+# For specifying a source track
+[source_track]
+# a list of objects
+x_y_form = true
+iic = 0
+v = 5
+t1 = 0
+t2 = 1
+# + for dt, - for nt
+dtnt = 50
+# if we're using rect form, these will be used
+x1 = 0.5
+y1 = 90
+x2 = 0
+y2 = 0
+# if we're using polar form, these will be used
+cpa = 0
+phi = 10
+
+
+# -------
+# SECTION 12: k-plane Images
+# -------
+# if iikpl is greater than 0 in section 1
+# List of k-plane images
+[[kplane_imgs]]
+freq = 100
+iivar = 1
+iikf = 3
+kr1 = 0.8
+kr2 = 1.0
+nkr = 101
+ki1 = 200
+ki2 = 0
+nki = 101
+nduct = 1
+iiph = 2
+iishp = 1
+iishs = 1
+
+
+# -------
+# SECTION 13: Reflection Coefficient vs f (Hz) and Grazing Angle (deg)
+# -------
+# Used if iirce is set to 1 in Section 1
+[r_vs_f]
+freq1 = 10
+freq2 = 50
+nfreq = 41
+iilog = 0
+theta1 = 90
+theta2 = 0
+ntheta = 91
+
+
+# -------
+# SECTION 14: F T File of R vs. Frequency and Angle
+# -------
+# Used if iirc is set to 2 in Section 1
+[rtr_vs_fa]
+freq1 = 10
+freq2 = 50
+fs = 100
+nfft = 512
+theta1 = 90
+theta2 = 0
+ntheta = 91
