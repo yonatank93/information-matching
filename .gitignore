@@ -180,6 +180,7 @@ theory/plots
 
 # Uncompressed dataset
 examples/SW_Si/training_dataset_varying_alat
+examples/SW_MoS2/original_configs
 
 # Result folders
 # IPs

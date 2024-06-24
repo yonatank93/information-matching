@@ -1,0 +1,27 @@
+# This file contains the lammps command to create the simulation box and atoms
+# Several variables needed to define the simulation box and atoms
+variable	initbSc equal ${initb}/${inita}*2  # Scaled initial latconst b
+variable	sqrt3 equal sqrt(3.0)
+variable	nx equal 1  # Number of cell repetition in x direction
+variable	ny equal 1  # Number of cell repetition in y direction
+variable	s2y equal 1.0/6.0
+variable	s4y equal 2.0/3.0
+
+# Create simulation box and atoms
+lattice		custom ${inita} &
+		a1 1.0 0.0 0.0 a2 0.0 ${sqrt3} 0.0 a3 0.0 0.0 ${initbSc} &
+		basis 0.0 0.0 0.5 basis 0.5 0.5 0.5 &
+		basis 0.5 ${s2y} 0.25 basis 0.5 ${s2y} 0.75 &
+		basis 0.0 ${s4y} 0.25 basis 0.0 ${s4y} 0.75
+
+# Create simulation box
+region		simbox block 0 ${nx} 0 ${ny} 0 1 units lattice
+create_box	2 simbox
+# Create atoms
+# Atom type 1 is Mo, atom type 2 is S
+create_atoms	1 box basis 1 1 basis 2 1 basis 3 2 basis 4 2 basis 5 2 basis 6 2
+
+# Define masses for Mo and S (not important since no dynamics are preformed,
+# but are still required by the algorithm).
+mass		1 95.94
+mass		2 32.065
