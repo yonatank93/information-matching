@@ -178,6 +178,9 @@ log.*
 # Theory
 theory/plots
 
+# Uncompressed dataset
+examples/SW_Si/training_dataset_varying_alat
+
 # Result folders
 # IPs
 examples/SW_Si/alat_small_range/results/*/
