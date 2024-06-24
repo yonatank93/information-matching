@@ -1,0 +1,8 @@
+matplotlib
+pyqt5
+corner
+ase @ git+https://gitlab.com/ase/ase.git@8af1a1f1a2c904a553038965014a0147b08c3789#egg=ase
+kimpy
+kliff==0.4.1
+geodesicLM
+kim_python_utils @ git+https://github.com/openkim/kim-python-utils
