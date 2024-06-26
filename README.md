@@ -1,4 +1,4 @@
-# Indicator Configuration
+# Information-matching
 
 This repository contains the scripts that we use to find the indicator configurations,
 i.e., the informative training data, via information-matching method. This method can be
@@ -8,23 +8,25 @@ used in optimal experimental design and active learning.
 
 # Get started
 
-Please read this [file](https://github.com/yonatank93/indicator_configuration/blob/main/indicator_config.pdf).
-It contains the introduction of the method and the detail of the calculation process.
+Please read this [file](https://github.com/yonatank93/indicator_configuration/blob/main/indicator_config.pdf),
+which contains an introduction to the method and the detail of the calculation process.
 
 
 
 # Installation
 
-## Dependencies
-Run `./setup.sh` to install the dependencies and the path to the environment.
-**Note:** Currently, user needs to install VASP, KIM API, and LAMMPS with KIM package and
-Python module manually. The `setup.sh` file doesn't handle this process yet.
+``` bash
+$ git clone https://github.com/yonatank93/information-matching.git
+$ cd information-matching
+$ pip install -e .
+```
 
 
 
 # Content
 
-* src directory - Contains Python modules for the information-matching calculation.
+* information_matching directory - Contains Python modules for the information-matching
+  calculation.
   * convex_optimization.py - The main module that solves the convex optimization problem
 	in information-matching method to fnd the optimal weights and data points.
   * src/fim - Contains modules to compute the FIM of a model. We provide numerical
@@ -43,6 +45,8 @@ Python module manually. The `setup.sh` file doesn't handle this process yet.
 
 * examples - This is where the scripts to run indicator configuration calculations and to
   do post-processing for each example case are stored.
+  **Note:** These examples have additional dependencies. Pleas read the README file for
+  those examples.
   * PWS - This folder contains application of the information-matching method to solve the
 	optimal sensor placement problem in power systems.
   * ORCA - This folder contains applications of the information-matching method in
@@ -59,7 +63,7 @@ Python module manually. The `setup.sh` file doesn't handle this process yet.
 
 # How to cite
 
-We are working on publishing the paper about this method.
+We are working on publishing a paper about this method.
 
 
 

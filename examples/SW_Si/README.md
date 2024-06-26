@@ -1,7 +1,7 @@
 # SW_Si
 
-This folder contains the files and script to find the indicator configuration via
-information-matching calculation using Stillinger-Weber potential for silicon.
+This folder contains several examples of information-matching calculation to find the
+indicator configuration for Stillinger-Weber potential for silicon.
 
 Prior to running any examples presented here, please extract the dataset first, which can
 be done by executing
