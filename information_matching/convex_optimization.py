@@ -11,6 +11,9 @@ import cvxpy as cp
 from .utils import eps
 
 
+default_solver = dict(solver=cp.SDPA)
+
+
 class ConvexOpt:
     """This class is for formulating and solving the convex optimization problem to find
     the indicator configuration. For the notation below, :math:`N` denotes the number of
@@ -63,7 +66,7 @@ class ConvexOpt:
         self._construct_problem()
         self._result = None  # To initialize the result property
 
-    def solve(self, solver):
+    def solve(self, solver=default_solver):
         """Solve the convex optimization problem.
 
         Parameters
@@ -148,36 +151,36 @@ class ConvexOpt:
         """
         if norm is None:
             norm = {}
+
+        # Target FIM
+        if "qoi" in norm:
+            norm_qoi = norm.pop("qoi")
         else:
-            # Target FIM
-            if "qoi" in norm:
-                norm_qoi = norm.pop("qoi")
-            else:
-                norm_qoi = 1.0
+            norm_qoi = 1.0
 
-            # Configuration FIMs
-            if "configs" in norm:
-                norm_conf = norm.pop("configs")
-            else:
-                norm_conf = 1.0
-            if isinstance(norm_conf, float):
-                norm_conf = np.ones(self.nconfigs) * norm_conf
-            else:
-                msg = f"Please provide {self.nconfigs} values for the configs norm"
-                assert len(norm_conf) == self.nconfigs, msg
-                norm_conf = np.array(norm_conf)
+        # Configuration FIMs
+        if "configs" in norm:
+            norm_conf = norm.pop("configs")
+        else:
+            norm_conf = 1.0
+        if isinstance(norm_conf, float):
+            norm_conf = np.ones(self.nconfigs) * norm_conf
+        else:
+            msg = f"Please provide {self.nconfigs} values for the configs norm"
+            assert len(norm_conf) == self.nconfigs, msg
+            norm_conf = np.array(norm_conf)
 
-            # Configuration FIMs
-            if "weights" in norm:
-                norm_wm = norm.pop("weights")
-            else:
-                norm_wm = 1.0
-            if isinstance(norm_wm, float):
-                norm_wm = np.ones(self.nconfigs) * norm_wm
-            else:
-                msg = f"Please provide {self.nconfigs} values for the weights norm"
-                assert len(norm_wm) == self.nconfigs, msg
-                norm_wm = np.array(norm_wm)
+        # Configuration FIMs
+        if "weights" in norm:
+            norm_wm = norm.pop("weights")
+        else:
+            norm_wm = 1.0
+        if isinstance(norm_wm, float):
+            norm_wm = np.ones(self.nconfigs) * norm_wm
+        else:
+            msg = f"Please provide {self.nconfigs} values for the weights norm"
+            assert len(norm_wm) == self.nconfigs, msg
+            norm_wm = np.array(norm_wm)
 
         # Finally, we need to scale the FIMs
         self.fim_qoi_vec /= norm_qoi
