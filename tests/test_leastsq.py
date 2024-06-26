@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.optimize as scopt
 
-import leastsq
+from information_matching import leastsq
 
 np.random.seed(1)
 
