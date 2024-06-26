@@ -1,7 +1,8 @@
 import numpy as np
 
-from fim_fd import FIM_fd, CD
-from fim_nd import FIM_nd
+from information_matching.fim import FIM_fd
+from information_matching.fim.fim_fd import CD
+from information_matching.fim import FIM_nd
 
 
 xlist = np.linspace(0, 1)
