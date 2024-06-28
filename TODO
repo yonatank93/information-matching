@@ -6,12 +6,12 @@
     - [X] 14-bus
     - [X] 39-bus
   - [X] ORCA
-  - [ ] SW Si
-    - [ ] alat small
-    - [ ] alat medium
-    - [ ] alat wide
-    - [ ] lattice and elastic constants
-    - [ ] phonon dispersion
+  - [X] SW Si
+    - [X] alat small
+    - [X] alat medium
+    - [X] alat wide
+    - [X] lattice and elastic constants
+    - [X] phonon dispersion
   - [ ] SW MoS2
 
 
