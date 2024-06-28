@@ -176,7 +176,7 @@ class ConvexOpt:
         shape = fim_qoi_array.shape  # Just store this value for future use
         fim_qoi_vec = fim_qoi_array.flatten()
         # Apply the scaling preconditioning to the target FIM
-        fim_qoi_array *= scale
+        fim_qoi_vec *= scale
         return fim_qoi_vec, scale, shape
 
     @staticmethod
