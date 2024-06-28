@@ -3,8 +3,6 @@ corresponding post-processings, such as get the non-zero weights from the convex
 optimization output.
 """
 
-from copy import copy
-
 import numpy as np
 import cvxpy as cp
 
@@ -21,19 +19,24 @@ class ConvexOpt:
 
     Parameters
     ----------
-    fim_qoi: np.ndarray (N, N)
-        The FIM of the target quantities of interest.
-    fim_conf: np.ndarray (L, N, N)
-        A 3d-array containing the FIMs of the training configurations.
-    config_ids: list (L,)
-        A list of strings that are used as identifiers of the configurations. The order of
-        this list needs to be the same as the order of ``fim_conf``.
-    norm: dict ``{"qoi": ..., "configs": ..., "weights": ...}``
-        Additional normalization constant to use in the calculation, applied by dividing
-        the corresponding quantities with this constant. User can provide the
-        normalization constant for the target FIM (qoi), configuration FIMs (configs), or
-        the weights being optimized. The orders of the normalization arrays need to be the
-        same as that of ``config_ids``. Default: 1.0 for all quantities.
+    fim_qoi: np.ndarray (N, N) or dict {"fim": np.ndarray(N, N), "scale": float}
+        The FIM of the target quantities of interest. The keyword scale in the dictionary
+        format specifies the muultiplicative factor for the FIM as a preconditioning step.
+        In the dictionary format, this keyword is optional, with a default value of 1.0.
+    fim_configs: dict
+        Information about the FIM of the candidate configurations, written as a dictionary
+        in one of the following format::
+
+            fim_configs = {config_id_1: value_1, config_id_2: value_2, ...}
+
+        where ``value_ii`` can be a ``np.ndarray(N, N)`` or a dictionary with the
+        following format::
+
+            value = {"fim": np.ndarray(N, N), "fim_scale": float, "weight_scale": float}
+
+        The keywords ``fim_scale`` and ``weight_scale`` specify the multiplicative factor
+        for the FIM and weight, respectively, to precondition the FIM and the weights to
+        help with the optimization. These numbers are optional, with default value of 1.0.
     l1norm_obj: bool
         An option to explicitly use l1-norm for the objective function instead of just a
         sum. In theory, these are the same, given the non-negative constraint on the
@@ -46,21 +49,25 @@ class ConvexOpt:
     Computationally, this is still the same as the original formulation.
     """
 
-    def __init__(self, fim_qoi, fim_conf, config_ids, norm=None, l1norm_obj=False):
-        self.config_ids = config_ids
+    def __init__(self, fim_qoi, fim_configs, l1norm_obj=False):
+        # Obtain the target FIM of the QoI
+        (
+            self.fim_qoi_vec,
+            self.scale_qoi,
+            self._fim_shape,
+        ) = self._get_target_fim_and_scale(fim_qoi)
+
+        # Obtain the configuration FIMs
+        self.config_ids = self._get_config_ids(fim_configs)
         self.nconfigs = len(self.config_ids)
+        self.fim_configs_vec, self.scale_conf = self._get_config_fims_and_scale(
+            fim_configs
+        )
+        # Get the scaling factor for the weights
+        self.scale_weights = self._get_weight_scale(fim_configs)
+
+        # Other settings
         self._l1norm_obj = l1norm_obj
-
-        # Deal with the FIM arguments. We store the flatten the FIMs, which speeds up the
-        # calculation.
-        self._fim_shape = fim_qoi.shape  # Store the shape to reshape the FIM back
-        self.fim_qoi_vec = copy(fim_qoi).flatten()
-        self.fim_configs_vec = np.array([fconf.flatten() for fconf in fim_conf])
-
-        # Normalize the FIM and get the normalization constants
-        # Normalizing the FIM can make the optimization more stable
-        # The weight norm is used to scale the weights during the optimization
-        self.norm_qoi, self.norm_conf, self.norm_weights = self._apply_norm(norm)
 
         # Construct the problem
         self._construct_problem()
@@ -145,55 +152,90 @@ class ConvexOpt:
         idx_nonzero_wm = self._get_idx_nonzero_wm(zero_tol)
         return self._get_config_weights_from_idx(idx_nonzero_wm)
 
-    def _apply_norm(self, norm):
-        """Apply the normalization constants. This action includes checking the values
-        and scaling the FIMs. The default value is 1.0 for all quantities.
+    @staticmethod
+    def _get_target_fim_and_scale(fim_qoi):
+        """From the FIM target input dictionary, extact the FIM matrix and the scale.
+        Then, scale the FIM right away. Additionally, we will use the flatten matrix in
+        the optimization, so we will do that too here.
         """
-        if norm is None:
-            norm = {}
-
-        # Target FIM
-        if "qoi" in norm:
-            norm_qoi = norm.pop("qoi")
+        if isinstance(fim_qoi, np.ndarray):
+            # The argument is given as an array, so we don't need to do anything to get
+            # the matrix. But, we need to set the scale
+            fim_qoi_array = fim_qoi
+            scale = 1.0
+        elif isinstance(fim_qoi, dict):
+            fim_qoi_array = fim_qoi["fim"]
+            if "scale" not in fim_qoi:
+                scale = 1.0
+            else:
+                scale = fim_qoi["scale"]
         else:
-            norm_qoi = 1.0
+            raise ValueError("Unknown format, input dict(fim=..., scale=...)")
 
-        # Configuration FIMs
-        if "configs" in norm:
-            norm_conf = norm.pop("configs")
-        else:
-            norm_conf = 1.0
-        if isinstance(norm_conf, float):
-            norm_conf = np.ones(self.nconfigs) * norm_conf
-        else:
-            msg = f"Please provide {self.nconfigs} values for the configs norm"
-            assert len(norm_conf) == self.nconfigs, msg
-            norm_conf = np.array(norm_conf)
+        # First, we will actually use the flatten FIM
+        shape = fim_qoi_array.shape  # Just store this value for future use
+        fim_qoi_vec = fim_qoi_array.flatten()
+        # Apply the scaling preconditioning to the target FIM
+        fim_qoi_array *= scale
+        return fim_qoi_vec, scale, shape
 
-        # Configuration FIMs
-        if "weights" in norm:
-            norm_wm = norm.pop("weights")
-        else:
-            norm_wm = 1.0
-        if isinstance(norm_wm, float):
-            norm_wm = np.ones(self.nconfigs) * norm_wm
-        else:
-            msg = f"Please provide {self.nconfigs} values for the weights norm"
-            assert len(norm_wm) == self.nconfigs, msg
-            norm_wm = np.array(norm_wm)
+    @staticmethod
+    def _get_config_ids(fim_configs):
+        """Retrieve the configuration identifiers, which are the keys to the fim_configs
+        dictionary.
+        """
+        return list(fim_configs)
 
-        # Finally, we need to scale the FIMs
-        self.fim_qoi_vec /= norm_qoi
-        self.fim_configs_vec /= norm_conf.reshape((-1, 1))
+    def _get_config_fims_and_scale(self, fim_configs):
+        """From the FIM configs input dictionary, retrieve the FIM values and the scaling
+        factor. Set any default values as necessary. And scale the FIM right away.
+        """
+        fim_configs_vec = np.empty((self.nconfigs, np.prod(self._fim_shape)))
+        scale_conf = np.empty(self.nconfigs)
+        for ii, identifier in enumerate(self.config_ids):
+            value = fim_configs[identifier]
+            if isinstance(value, np.ndarray):
+                # It is an array, so it must be the FIM matrix
+                # Flatten and assign
+                fim_configs_vec[ii] = value.flatten()
+                # There is no scale information, so set to the default value
+                scale_conf[ii] = 1.0
+            elif isinstance(value, dict):
+                # First, retrieve the scaling factor
+                if "fim_scale" in value:
+                    scale_conf[ii] = value["fim_scale"]
+                else:
+                    scale_conf[ii] = 1.0
+                # Retrieve the FIM, flatten, scale, and assign
+                fim_configs_vec[ii] = scale_conf[ii] * value["fim"].flatten()
+            else:
+                raise ValueError(
+                    "Unknown input format, input dict(fim=..., fim_scale=...) "
+                    + "for each configuration"
+                )
+        return fim_configs_vec, scale_conf
 
-        return norm_qoi, norm_conf, norm_wm
-
-    def _objective_fn(self):
-        """Objective function of the convex optimization."""
-        if self._l1norm_obj:
-            return cp.norm(self.wm / self.norm_weights.reshape((-1, 1)), p=1)
-        else:
-            return cp.sum(self.wm / self.norm_weights.reshape((-1, 1)))
+    def _get_weight_scale(self, fim_configs):
+        """From the FIM_configs input dictionary, retrieve the weight scaling for each
+        configuration.
+        """
+        scale_weights = np.empty(self.nconfigs)
+        for ii, identifier in enumerate(self.config_ids):
+            value = fim_configs[identifier]
+            if isinstance(value, np.ndarray):
+                # Use default value
+                scale_weights[ii] = 1.0
+            elif isinstance(value, dict):
+                if "weight_scale" in value:
+                    scale_weights[ii] = value["weight_scale"]
+                else:
+                    scale_weights[ii] = 1.0
+            else:
+                raise ValueError(
+                    "Provide weight as 'weight_scale' key in fim_configs dictionary "
+                    + "for each configuration"
+                )
+        return scale_weights
 
     def _construct_problem(self):
         """Formulate the convex optimization problem."""
@@ -208,6 +250,15 @@ class ConvexOpt:
         self.constraints = [self.wm >= 0.0, self._difference_matrix(self.wm) >> 0]
         # Problem
         self.problem = cp.Problem(self.objective, self.constraints)
+
+    def _objective_fn(self):
+        """Objective function of the convex optimization."""
+        # Apply weight scaling factor
+        scaled_weights = cp.multiply(self.wm, self.scale_weights.reshape((-1, 1)))
+        if self._l1norm_obj:
+            return cp.norm(scaled_weights, p=1)
+        else:
+            return cp.sum(scaled_weights)
 
     def _difference_matrix(self, weights):
         """This function compute the matrix of difference between the weighted sum of the
@@ -234,7 +285,7 @@ class ConvexOpt:
             Unscaled weight values. The weights corresponding to the energy and forces
             are stored in separate keys.
         """
-        unscaled_wm = weights * self.norm_qoi / self.norm_conf
+        unscaled_wm = weights * self.scale_conf / self.scale_qoi
         return unscaled_wm
 
     def _get_config_weights_from_idx(self, idx):
