@@ -1,7 +1,7 @@
 *** TODO Change the format of the FIM input into dictionary
 - [X] Apply the change in the convex_optimization.py script
 - [X] Update the tests
-- [-] Update the examples
+- [X] Update the examples
   - [X] PWS
     - [X] 14-bus
     - [X] 39-bus
@@ -12,7 +12,8 @@
     - [X] alat wide
     - [X] lattice and elastic constants
     - [X] phonon dispersion
-  - [ ] SW MoS2
+  - [X] SW MoS2
+- [ ] Add example part in README
 
 
 *** TODO Try using uniform scaling factor across all configuration FIMs
