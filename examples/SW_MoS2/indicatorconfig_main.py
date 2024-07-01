@@ -185,13 +185,20 @@ while step < maxsteps:
     print("Solve convex optimization problem")
     cvx_file = set_file(STEP_DIR / "cvx_result.pkl")
 
-    # Normalization constants. By scaling the FIM, the optimization can be more stable.
-    norm_target = np.linalg.norm(fim_target)
-    norm_configs = np.array([np.linalg.norm(fim) for fim in fim_configs_tensor])
-    norm = {"qoi": norm_target, "configs": norm_configs}
+    # Construct the input FIMs
+    # FIM target
+    scale = 1 / np.linalg.norm(fim_target)
+    fim_target = {"fim": fim_target, "scale": scale}
+    # FIM configs
+    fim_configs = {}
+    for ii, identifier in enumerate(Configs.ids):
+        scale = 1 / np.linalg.norm(fim_configs_tensor[ii])
+        fim_configs.update(
+            {identifier: {"fim": fim_configs_tensor[ii], "fim_scale": scale}}
+        )
 
     # Instantiate convex optimization class
-    cvxopt = ConvexOpt(fim_target, fim_configs_tensor, Configs.ids, norm=norm)
+    cvxopt = ConvexOpt(fim_target, fim_configs)
 
     # Solve
     solver = dict(
