@@ -13,18 +13,4 @@
     - [X] lattice and elastic constants
     - [X] phonon dispersion
   - [X] SW MoS2
-- [ ] Add example part in README
-
-
-*** TODO Try using uniform scaling factor across all configuration FIMs
-- [ ] SW Si
-  - [ ] alat small
-  - [ ] alat medium
-  - [ ] alat wide
-  - [ ] lattice and elastic constants
-  - [ ] phonon dispersion
-- [ ] PWS
-  - [ ] 14-bus
-  - [ ] 39-bus
-- [ ] ORCA
-- [ ] SW MoS2
+- [X] Add example part in README

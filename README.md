@@ -6,13 +6,6 @@ used in optimal experimental design and active learning.
 
 
 
-# Get started
-
-Please read this [file](https://github.com/yonatank93/indicator_configuration/blob/main/indicator_config.pdf),
-which contains an introduction to the method and the detail of the calculation process.
-
-
-
 # Installation
 
 ``` bash
@@ -20,6 +13,25 @@ $ git clone https://github.com/yonatank93/information-matching.git
 $ cd information-matching
 $ pip install -e .
 ```
+
+
+
+# Get started
+
+Please read this [file](https://github.com/yonatank93/indicator_configuration/blob/main/indicator_config.pdf),
+which contains an introduction to the method and the detail of the calculation process.
+
+A typical workflow to use information-matching method to find the indicator configurations
+and the corresponding weights is as follows:
+1. Define the models to compute the training and target quantities
+2. Define the candidate configurations or data
+3. Compute the FIM for each candidate configuration and the FI of the target quantities
+4. Solve a convex optimization problem to match the FIMs
+5. Propagate the uncertainties to the target quantities
+
+We provide a simple [toy example](https://github.com/yonatank93/information-matching/tree/main/examples/oy_example/toy_example.ipynb)
+to illustrate a common workflow to do information-matching calculation.
+
 
 
 
@@ -43,8 +55,9 @@ $ pip install -e .
 	representation of the positive semidefinite constraint in the information-matching
 	method.
 
-* examples - This is where the scripts to run indicator configuration calculations and to
-  do post-processing for each example case are stored.
+* examples - This is where the scripts to run information-matching calculations and to
+  do post-processing for each example case are stored. The results for these examples
+  are included in the corresponding paper.
   **Note:** These examples have additional dependencies. Pleas read the README file for
   those examples.
   * PWS - This folder contains application of the information-matching method to solve the
@@ -61,9 +74,11 @@ $ pip install -e .
 
 
 
+
 # How to cite
 
 We are working on publishing a paper about this method.
+
 
 
 
