@@ -18,9 +18,6 @@ $ pip install -e .
 
 # Get started
 
-Please read this [file](https://github.com/yonatank93/indicator_configuration/blob/main/indicator_config.pdf),
-which contains an introduction to the method and the detail of the calculation process.
-
 A typical workflow to use information-matching method to find the indicator configurations
 and the corresponding weights is as follows:
 1. Define the models to compute the training and target quantities
