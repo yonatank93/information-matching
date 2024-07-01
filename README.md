@@ -26,7 +26,7 @@ and the corresponding weights is as follows:
 4. Solve a convex optimization problem to match the FIMs
 5. Propagate the uncertainties to the target quantities
 
-We provide a simple [toy example](https://github.com/yonatank93/information-matching/tree/main/examples/oy_example/toy_example.ipynb)
+We provide a simple [toy example](https://github.com/yonatank93/information-matching/tree/main/examples/Toy_example/toy_example.ipynb)
 to illustrate a common workflow to do information-matching calculation.
 
 
