@@ -82,3 +82,6 @@ class FIM_nd:
         """
         Jac = self.compute_jacobian(x, **kwargs)
         return Jac.T @ Jac
+
+    def __call__(self, *args, **kwargs):
+        return self.compute_FIM(*args, **kwargs)
