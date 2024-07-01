@@ -131,7 +131,7 @@ class ConvexOpt:
         self._result = value
         self.wm.value = self._result["wm"].reshape((-1, 1))
 
-    def get_config_weights(self, zero_tol):
+    def get_config_weights(self, zero_tol=1e-4):
         """Get the non-zero weights from the current convex optimization result.
 
         Parameters
