@@ -131,10 +131,10 @@ while step < maxsteps:
     if fim_target_file.exists():
         fim_target = np.load(fim_target_file)
     else:
-        fim_target_model = FIM_jl(model_target.residuals)
-        fim_target = fim_target_model.compute_FIM(
-            params, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
+        fim_target_model = FIM_jl(
+            model_target.residuals, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
         )
+        fim_target = fim_target_model.compute_FIM(params)
         # params, h=0.1, t=2.0, maxiters=100, abstol=1e-8, reltol=1e-8
         np.save(fim_target_file, fim_target)
 
@@ -161,10 +161,15 @@ while step < maxsteps:
             fim_F = np.load(fim_F_file)
         else:
             # Compute forces FIM
-            fim_F_model = FIM_jl(ModelTrainingBase(cpath, qoi=["forces"]).predictions)
-            fim_F = fim_F_model.compute_FIM(
-                params, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
+            fim_F_model = FIM_jl(
+                ModelTrainingBase(cpath, qoi=["forces"]).predictions,
+                h=0.1,
+                t=2.0001,
+                maxiters=100,
+                abstol=tol,
+                reltol=tol,
             )
+            fim_F = fim_F_model.compute_FIM(params)
             np.save(fim_F_file, fim_F)
 
         return fim_F

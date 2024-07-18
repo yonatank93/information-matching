@@ -125,8 +125,8 @@ while step < maxsteps:
     if fim_target_file.exists():
         fim_target = np.load(fim_target_file)
     else:
-        fim_target_model = FIM_nd(model_target.residuals)
-        fim_target = fim_target_model.compute_FIM(params, step=0.1 * params + 1e-4)
+        fim_target_model = FIM_nd(model_target.residuals, step=0.1 * params + 1e-4)
+        fim_target = fim_target_model.compute_FIM(params)
         np.save(fim_target_file, fim_target)
 
     # FIMs of energy and forces
@@ -153,8 +153,11 @@ while step < maxsteps:
             fim_E = np.load(fim_E_file)
         else:
             # Compute energy FIM
-            fim_E_model = FIM_nd(ModelTrainingBase(cpath, qoi=["energy"]).predictions)
-            fim_E = fim_E_model.compute_FIM(params, step=0.1 * params + 1e-4)
+            fim_E_model = FIM_nd(
+                ModelTrainingBase(cpath, qoi=["energy"]).predictions,
+                step=0.1 * params + 1e-4,
+            )
+            fim_E = fim_E_model.compute_FIM(params)
             np.save(fim_E_file, fim_E)
 
         return fim_E
@@ -172,8 +175,11 @@ while step < maxsteps:
             fim_F = np.load(fim_F_file)
         else:
             # Compute forces FIM
-            fim_F_model = FIM_nd(ModelTrainingBase(cpath, qoi=["forces"]).predictions)
-            fim_F = fim_F_model.compute_FIM(params, step=0.1 * params + 1e-4)
+            fim_F_model = FIM_nd(
+                ModelTrainingBase(cpath, qoi=["forces"]).predictions,
+                step=0.1 * params + 1e-4,
+            )
+            fim_F = fim_F_model.compute_FIM(params)
             np.save(fim_F_file, fim_F)
 
         return fim_F
