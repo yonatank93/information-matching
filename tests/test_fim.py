@@ -68,9 +68,6 @@ def test_kwargs_nd():
 def test_kwargs_fd():
     h = 0.01
     fim_fn = FIM_fd(fn_kwargs, deriv_fn=CD, h=h)
-    # Test for the extra kwargs
-    assert fim_fn.deriv_fn == CD
-    assert fim_fn.h == h
     # Test for exception if function kwargs is not given
     with pytest.raises(TypeError):
         _ = fim_fn.compute_jacobian(xlist)

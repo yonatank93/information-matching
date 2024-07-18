@@ -63,8 +63,8 @@ class FIM_fd:
 
     def __init__(self, model, transform=None, inverse_transform=None, deriv_fn=FD, h=0.1):
         self.model = model
-        self.deriv_fn = deriv_fn
-        self.h = h
+        self._deriv_fn = deriv_fn
+        self._h = h
 
         # Get the parameter transformation
         if transform is None:
@@ -110,11 +110,11 @@ class FIM_fd:
 
         # Formatting h, we prefer to have a list of h values for each parameter, which
         # allows us to use different step size for each parameter.
-        if isinstance(self.h, (float, int)):
-            h = np.repeat(self.h, nparams)
-        elif isinstance(self.h, (list, np.ndarray)):
-            h = self.h
+        if isinstance(self._h, (float, int)):
+            h = np.repeat(self._h, nparams)
+        elif isinstance(self._h, (list, np.ndarray)):
             assert len(h) == nparams, "Please specify one step size for each parameter."
+            h = self._h
 
         # Now, create a list of v vectors. This should just be the column of an identity
         # matrix, since we want to perturb the parameters one at a time for each column
@@ -123,15 +123,11 @@ class FIM_fd:
 
         # Compute the Jacobian
         def jac_column_wrapper(ii):
-            return self._compute_jacobian_one_column(fn, x, vs[ii], h[ii])
+            return self._deriv_fn(fn, x, vs[ii], h[ii])
 
         # Note: There is a possiblility to parallelize this part in the future
         jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
         return jacobian_T.T
-
-    def _compute_jacobian_one_column(self, fn, x, v, h):
-        """Compute one column of the Jacobian matrix."""
-        return self.deriv_fn(fn, x, v, h)
 
     def compute_FIM(self, x, *args, **kwargs):
         """Compute the FIM.
