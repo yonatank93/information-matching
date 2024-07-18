@@ -11,23 +11,6 @@ the IEEE 14-bus network:
 
 ## Content
 
-* energycurve_data.npz - It contains the predictions of the energy change vs lattice
-  compression, evaluated using KIM's parameters. It also contains 10% of the predicted
-  values as the error bars.
-* indicatorconfig_main.py - This file is the main file to run the indicator configuration
-  calculation. The end result of this calculation is a set of reduced configurations with
-  the corresponding optimal weights.
-* indicatorconfig_linapprox_uq.py - Following the indicator configuration calculation,
-  we propagate the uncertainty from the data to the parameters. In this script, the
-  calculation is done using linearized model mapping from the data to the parameters.
-  Having found the uncertainty of the parameters, we then propagate it to the target QoI
-  to get the uncertainty of the target predictions. This is done by using linearized
-  model mapping from the parameters to the target QoI. (We can also do Monte Carlo-type
-  calculation.)
-* parameter_variation.py - This script compare the parameter values across different
-  iterations and uses MSER to estimate the burn-in period, which in this case is
-  considered as the period in which the parameters are not settled around some values.
-
 * models - A module that contains the model to compute the voltage phasor observations.
 * compute_fims_IEEE14.py - A script to compute the FIM for each bus.
 * fim_matching_IEEE14.ipynb - A notebook to find the optimal PMU placements for observing
