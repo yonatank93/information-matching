@@ -98,8 +98,8 @@ if jac_train_file.exists():
     J = np.load(jac_train_file)
 else:
     # Compute Jacobian matrix
-    fim_inst = FIM_nd(model.residuals)
-    J = fim_inst.compute_jacobian(bestfit, step=0.1 * bestfit + 1e-4)
+    fim_inst = FIM_nd(model.residuals, step=0.1 * bestfit + 1e-4)
+    J = fim_inst.compute_jacobian(bestfit)
     np.save(jac_train_file, J)
 # FIM
 fim = J.T @ J
@@ -228,8 +228,8 @@ else:
     # We want to take the Jacobian of the prediction mapping, without the error bar.
     # However, the module that we have used the residuals. We can just modify the result
     # taking the negative value and multiplying it with the error bars.
-    Jac_target_inst = FIM_nd(model_target.residuals)
-    J_target = -Jac_target_inst.compute_jacobian(bestfit, step=0.1 * bestfit + 1e-4)
+    Jac_target_inst = FIM_nd(model_target.residuals, step=0.1 * bestfit + 1e-4)
+    J_target = -Jac_target_inst.compute_jacobian(bestfit)
     J_target *= model_target.std.reshape((-1, 1))
     np.save(jac_target_file, J_target)
 
