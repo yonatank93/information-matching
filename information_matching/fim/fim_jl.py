@@ -4,7 +4,7 @@ install PyCall to run the calculation from Python.
 """
 
 import julia
-from julia import Base, NumDiffTools
+from julia import NumDiffTools
 
 
 def default_transform(x):
@@ -24,12 +24,12 @@ class FIM_jl:
     inverse_transform: callable ``inverse_transform(x)``
         This is the inverse of transformation function above.
     kwargs: dict
-        Additional keyword arguments for the model.
+        Additional keyword arguments for ``Numdifftools.jacobian``.
     """
 
     def __init__(self, model, transform=None, inverse_transform=None, **kwargs):
         self.model = model
-        self.fn = self._model_wrapper(kwargs)
+        self._jac_kwargs = kwargs
 
         # Get the parameter transformation
         if transform is None:
@@ -42,15 +42,15 @@ class FIM_jl:
         else:
             self.inverse_transform = inverse_transform
 
-    def _model_wrapper(self, kwargs):
+    def _model_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
 
         def model_eval(x):
-            return self.model(x, **kwargs)
+            return self.model(x, *args, **kwargs)
 
         return model_eval
 
-    def compute_jacobian(self, x, **kwargs):
+    def compute_jacobian(self, x, *args, **kwargs):
         """Compute the jacobian of the model, evaluated at parameter ``x``.
         Parameter ``x`` should be written in the parameterization that the model
         uses.
@@ -60,17 +60,18 @@ class FIM_jl:
         x: np.ndarray (nparams,)
             Parameter values in which the Jacobian is evaluated. It should be
             written in the parameterization that the model uses.
-        kwargs: dict
-            Additional keyword arguments for the function to compute the jacobian.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (npred, nparams)
         """
+        fn = self._model_wrapper(*args, **kwargs)
         params = self.transform(x)
-        return NumDiffTools.jacobian(self.fn, params, **kwargs)
+        return NumDiffTools.jacobian(fn, params, **self._jac_kwargs)
 
-    def compute_FIM(self, x, **kwargs):
+    def compute_FIM(self, x, *args, **kwargs):
         """Compute the FIM.
 
         Parameters
@@ -78,16 +79,16 @@ class FIM_jl:
         x: np.ndarray (nparams,)
             Parameter values in which the FIM is evaluated. It should be
             written in the parameterization that the model uses.
-        kwargs: dict
-            Additional keyword arguments for the function to compute the jacobian.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (nparams, nparams)
         """
 
-        Jac = self.compute_jacobian(x, **kwargs)
+        Jac = self.compute_jacobian(x, *args, **kwargs)
         return Jac.T @ Jac
 
-    def __call__(self, *args, **kwargs):
-        return self.compute_FIM(*args, **kwargs)
+    def __call__(self, x, *args, **kwargs):
+        return self.compute_FIM(x, *args, **kwargs)

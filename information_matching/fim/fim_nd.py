@@ -18,12 +18,12 @@ class FIM_nd:
     inverse_transform: callable ``inverse_transform(x)``
         This is the inverse of transformation function above.
     kwargs: dict
-        Additional keyword arguments for the model.
+        Additional keyword arguments for ``numdifftools.Jacobian``.
     """
 
     def __init__(self, model, transform=None, inverse_transform=None, **kwargs):
         self.model = model
-        self.fn = self._model_wrapper(kwargs)
+        self.jac_func = nd.Jacobian(self.model, method="forward", **kwargs)
 
         # Get the parameter transformation
         if transform is None:
@@ -36,15 +36,7 @@ class FIM_nd:
         else:
             self.inverse_transform = inverse_transform
 
-    def _model_wrapper(self, kwargs):
-        """A wrapper function that inserts the keyword arguments to the model."""
-
-        def model_eval(x):
-            return self.model(x, **kwargs)
-
-        return model_eval
-
-    def compute_jacobian(self, x, **kwargs):
+    def compute_jacobian(self, x, *args, **kwargs):
         """Compute the jacobian of the model, evaluated at parameter ``x``.
         Parameter ``x`` should be written in the parameterization that the model
         uses.
@@ -54,18 +46,17 @@ class FIM_nd:
         x: np.ndarray (nparams,)
             Parameter values in which the Jacobian is evaluated. It should be
             written in the parameterization that the model uses.
-        kwargs: dict
-            Additional keyword arguments for the function to compute the jacobian.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (npred, nparams)
         """
         params = self.transform(x)
-        self.jac_func = nd.Jacobian(self.fn, method="forward", **kwargs)
-        return self.jac_func(params)
+        return self.jac_func(params, *args, **kwargs)
 
-    def compute_FIM(self, x, **kwargs):
+    def compute_FIM(self, x, *args, **kwargs):
         """Compute the FIM.
 
         Parameters
@@ -73,15 +64,15 @@ class FIM_nd:
         x: np.ndarray (nparams,)
             Parameter values in which the FIM is evaluated. It should be
             written in the parameterization that the model uses.
-        kwargs: dict
-            Additional keyword arguments for the function to compute the jacobian.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (nparams, nparams)
         """
-        Jac = self.compute_jacobian(x, **kwargs)
+        Jac = self.compute_jacobian(x, *args, **kwargs)
         return Jac.T @ Jac
 
-    def __call__(self, *args, **kwargs):
-        return self.compute_FIM(*args, **kwargs)
+    def __call__(self, x, *args, **kwargs):
+        return self.compute_FIM(x, *args, **kwargs)
