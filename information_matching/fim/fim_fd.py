@@ -48,25 +48,23 @@ class FIM_fd:
     ----------
     model: callable ``model(x, **kwargs)``
         A function that we will evaluate the derivative of.
-    deriv_fn: callable ``deriv_fn(f, x, v, h)``
-        A function to do finite difference derivative where f is the function to take the
-        derivative, x is the vector of parameters to evaluate the derivative, v is the
-        direction to take the derivative, and h is the step size.
     transform: callable ``transform(x)``
         A function to perform transformation from the parameterization of the
         model to what ever parameterization we want to use.
     inverse_transform: callable ``inverse_transform(x)``
         This is the inverse of transformation function above.
-    kwargs: dict
-        Additional keyword arguments for the model.
+    deriv_fn: callable ``deriv_fn(f, x, v, h)``
+        A function to do finite difference derivative where f is the function to take the
+        derivative, x is the vector of parameters to evaluate the derivative, v is the
+        direction to take the derivative, and h is the step size.
+    h: float or list (nparams,)
+        Step size to use in the finite difference derivative.
     """
 
-    def __init__(
-        self, model, deriv_fn=FD, transform=None, inverse_transform=None, **kwargs
-    ):
+    def __init__(self, model, transform=None, inverse_transform=None, deriv_fn=FD, h=0.1):
         self.model = model
-        self.fn = self._model_wrapper(kwargs)
         self.deriv_fn = deriv_fn
+        self.h = h
 
         # Get the parameter transformation
         if transform is None:
@@ -79,15 +77,15 @@ class FIM_fd:
         else:
             self.inverse_transform = inverse_transform
 
-    def _model_wrapper(self, kwargs):
+    def _model_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
 
         def model_eval(x):
-            return self.model(x, **kwargs)
+            return self.model(x, *args, **kwargs)
 
         return model_eval
 
-    def compute_jacobian(self, x, h=0.1):
+    def compute_jacobian(self, x, *args, **kwargs):
         """Compute the jacobian of the model, evaluated at parameter ``x``.
         Parameter ``x`` should be written in the parameterization that the model
         uses.
@@ -97,22 +95,26 @@ class FIM_fd:
         x: np.ndarray (nparams,)
             Parameter values in which the Jacobian is evaluated. It should be
             written in the parameterization that the model uses.
-        h: float or list (nparams,)
-            Step size to use in the finite difference derivative.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (npred, nparams)
         """
+        # Model to compute the derivative of
+        fn = self._model_wrapper(*args, **kwargs)
         # Apply parameter transformation
         params = self.transform(x)
         nparams = len(params)
+
         # Formatting h, we prefer to have a list of h values for each parameter, which
         # allows us to use different step size for each parameter.
-        if isinstance(h, (float, int)):
-            h = np.repeat(h, nparams)
-        elif isinstance(h, (list, np.ndarray)):
-            assert len(h) == nparams, "Specify one step size for each parameter."
+        if isinstance(self.h, (float, int)):
+            h = np.repeat(self.h, nparams)
+        elif isinstance(self.h, (list, np.ndarray)):
+            h = self.h
+            assert len(h) == nparams, "Please specify one step size for each parameter."
 
         # Now, create a list of v vectors. This should just be the column of an identity
         # matrix, since we want to perturb the parameters one at a time for each column
@@ -121,17 +123,17 @@ class FIM_fd:
 
         # Compute the Jacobian
         def jac_column_wrapper(ii):
-            return self._compute_jacobian_one_column(x, vs[ii], h[ii])
+            return self._compute_jacobian_one_column(fn, x, vs[ii], h[ii])
 
         # Note: There is a possiblility to parallelize this part in the future
         jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
         return jacobian_T.T
 
-    def _compute_jacobian_one_column(self, x, v, h):
+    def _compute_jacobian_one_column(self, fn, x, v, h):
         """Compute one column of the Jacobian matrix."""
-        return self.deriv_fn(self.fn, x, v, h)
+        return self.deriv_fn(fn, x, v, h)
 
-    def compute_FIM(self, x, h=0.1):
+    def compute_FIM(self, x, *args, **kwargs):
         """Compute the FIM.
 
         Parameters
@@ -139,15 +141,15 @@ class FIM_fd:
         x: np.ndarray (nparams,)
             Parameter values in which the FIM is evaluated. It should be
             written in the parameterization that the model uses.
-        h: float or list (nparams,)
-            Step size to use in the finite difference derivative.
+        args, kwargs:
+            Additional positional and keyword arguments for the model.
 
         Returns
         -------
         np.ndarray (nparams, nparams)
         """
-        Jac = self.compute_jacobian(x, h)
+        Jac = self.compute_jacobian(x, *args, **kwargs)
         return Jac.T @ Jac
 
-    def __call__(self, *args, **kwargs):
-        return self.compute_FIM(*args, **kwargs)
+    def __call__(self, x, *args, **kwargs):
+        return self.compute_FIM(x, *args, **kwargs)
