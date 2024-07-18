@@ -54,8 +54,6 @@ def test_evaluation_nd():
 def test_kwargs_nd():
     kwargs = dict(step=0.01)  # Keyword argument for nd.Jacobian
     fim_fn = FIM_nd(fn_kwargs, **kwargs)
-    # Test for the nd.Jacobian kwargs
-    assert fim_fn.jac_kwargs == kwargs
     # Test for exception if function kwargs is not given
     with pytest.raises(TypeError):
         _ = fim_fn.compute_jacobian(xlist)

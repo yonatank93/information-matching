@@ -23,7 +23,7 @@ class FIM_nd:
 
     def __init__(self, model, transform=None, inverse_transform=None, **kwargs):
         self.model = model
-        self.jac_kwargs = kwargs
+        self.jac_func = nd.Jacobian(self.model, method="forward", **kwargs)
 
         # Get the parameter transformation
         if transform is None:
@@ -35,14 +35,6 @@ class FIM_nd:
             self.inverse_transform = default_transform
         else:
             self.inverse_transform = inverse_transform
-
-    def _model_wrapper(self, *args, **kwargs):
-        """A wrapper function that inserts the keyword arguments to the model."""
-
-        def model_eval(x):
-            return self.model(x, *args, **kwargs)
-
-        return model_eval
 
     def compute_jacobian(self, x, *args, **kwargs):
         """Compute the jacobian of the model, evaluated at parameter ``x``.
@@ -62,9 +54,7 @@ class FIM_nd:
         np.ndarray (npred, nparams)
         """
         params = self.transform(x)
-        fn = self._model_wrapper(*args, **kwargs)
-        self.jac_func = nd.Jacobian(fn, method="forward", **self.jac_kwargs)
-        return self.jac_func(params)
+        return self.jac_func(params, *args, **kwargs)
 
     def compute_FIM(self, x, *args, **kwargs):
         """Compute the FIM.
