@@ -1,5 +1,9 @@
 import numpy as np
-import emcee
+
+try:
+    import emcee
+except ImportError:
+    raise ImportError("Please install emcee: pip install emcee")
 
 
 def autocorr(chains, time_axis=1, decorrelate=False, **kwargs):

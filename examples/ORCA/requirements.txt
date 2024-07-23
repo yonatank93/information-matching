@@ -1,3 +1,5 @@
 jupyter
+matplotlib
+pyqt5
 svgpathtools
 svgpath2mpl
