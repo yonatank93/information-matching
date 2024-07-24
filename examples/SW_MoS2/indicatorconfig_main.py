@@ -134,7 +134,7 @@ while step < maxsteps:
         fim_target_model = FIM_jl(
             model_target.residuals, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
         )
-        fim_target = fim_target_model.compute_FIM(params)
+        fim_target = fim_target_model.FIM(params)
         # params, h=0.1, t=2.0, maxiters=100, abstol=1e-8, reltol=1e-8
         np.save(fim_target_file, fim_target)
 
@@ -148,7 +148,7 @@ while step < maxsteps:
 
     # Define functions to compute energy and forces FIMs (separately) for one
     # configuration. These functions will be used in parallelization.
-    def compute_FIM_forces_1config(test_id_item):
+    def FIM_forces_1config(test_id_item):
         ii, cpath = test_id_item
         # Path to the configuration file
         identifier = ".".join((Path(cpath).name).split(".")[:-1])
@@ -169,7 +169,7 @@ while step < maxsteps:
                 abstol=tol,
                 reltol=tol,
             )
-            fim_F = fim_F_model.compute_FIM(params)
+            fim_F = fim_F_model.FIM(params)
             np.save(fim_F_file, fim_F)
 
         return fim_F
@@ -179,7 +179,7 @@ while step < maxsteps:
     fim_configs_tensor = np.array(
         list(
             tqdm(
-                map(compute_FIM_forces_1config, enumerate(Configs.dataset_files)),
+                map(FIM_forces_1config, enumerate(Configs.dataset_files)),
                 total=Configs.nconfigs,
             )
         )

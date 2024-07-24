@@ -98,7 +98,7 @@ if jac_train_file.exists():
 else:
     # Compute Jacobian matrix
     fim_inst = FIM_nd(model.residuals, step=0.1 * bestfit + 1e-4)
-    J = fim_inst.compute_jacobian(bestfit)
+    J = fim_inst.Jacobian(bestfit)
     np.save(jac_train_file, J)
 # FIM
 fim = J.T @ J
@@ -269,7 +269,7 @@ else:
     # However, the module that we have used the residuals. We can just modify the result
     # taking the negative value and multiplying it with the error bars.
     Jac_target_inst = FIM_nd(model_target.residuals_with_zeros, step=0.1 * bestfit + 1e-4)
-    J_target = -Jac_target_inst.compute_jacobian(bestfit)
+    J_target = -Jac_target_inst.Jacobian(bestfit)
     J_target *= model_target.std_with_zeros.reshape((-1, 1))
     np.save(jac_target_file, J_target)
 
