@@ -123,7 +123,7 @@ while step < maxsteps:
         fim_target = np.load(fim_target_file)
     else:
         fim_target_model = FIM_nd(model_target.residuals, step=0.1 * params + 1e-4)
-        fim_target = fim_target_model.compute_FIM(params)
+        fim_target = fim_target_model.FIM(params)
         np.save(fim_target_file, fim_target)
 
     # FIMs of energy and forces
@@ -137,7 +137,7 @@ while step < maxsteps:
 
     # Define functions to compute energy and forces FIMs (separately) for one
     # configuration. These functions will be used in parallelization.
-    def compute_FIM_energy_1config(test_id_item):
+    def FIM_energy_1config(test_id_item):
         ii, cpath = test_id_item
         # Path to the configuration file
         identifier = ".".join((Path(cpath).name).split(".")[:-1])
@@ -154,12 +154,12 @@ while step < maxsteps:
                 ModelTrainingBase(cpath, qoi=["energy"]).predictions,
                 step=0.1 * params + 1e-4,
             )
-            fim_E = fim_E_model.compute_FIM(params)
+            fim_E = fim_E_model.FIM(params)
             np.save(fim_E_file, fim_E)
 
         return fim_E
 
-    def compute_FIM_forces_1config(test_id_item):
+    def FIM_forces_1config(test_id_item):
         ii, cpath = test_id_item
         # Path to the configuration file
         identifier = ".".join((Path(cpath).name).split(".")[:-1])
@@ -176,7 +176,7 @@ while step < maxsteps:
                 ModelTrainingBase(cpath, qoi=["forces"]).predictions,
                 step=0.1 * params + 1e-4,
             )
-            fim_F = fim_F_model.compute_FIM(params)
+            fim_F = fim_F_model.FIM(params)
             np.save(fim_F_file, fim_F)
 
         return fim_F
@@ -188,7 +188,7 @@ while step < maxsteps:
         fim_E_tensor = np.array(
             list(
                 tqdm(
-                    p.imap(compute_FIM_energy_1config, enumerate(Configs.files_energy)),
+                    p.imap(FIM_energy_1config, enumerate(Configs.files_energy)),
                     total=Configs.nconfigs_energy,
                 )
             )
@@ -198,7 +198,7 @@ while step < maxsteps:
         fim_F_tensor = np.array(
             list(
                 tqdm(
-                    p.imap(compute_FIM_forces_1config, enumerate(Configs.files_forces)),
+                    p.imap(FIM_forces_1config, enumerate(Configs.files_forces)),
                     total=Configs.nconfigs_forces,
                 )
             )
@@ -419,384 +419,3 @@ if terminate:
     print(f"The calculation has converged in {step} steps")
 else:
     print("The maximum number of steps is exceeded.")
-
-
-# """This module is to test the convex optimization and, by extension, the
-# weights later.
-# """
-
-# from pathlib import Path
-# from tqdm import tqdm
-# import pickle
-
-# import numpy as np
-# import cvxpy as cp
-# from cvxpy.error import SolverError
-# from byukim.utils import NonDaemonicPool as Pool
-
-# # from multiprocessing import Pool
-
-# from models import (
-#     ModelAlatBase,
-#     ModelAlat,
-#     ModelPhononDispersion,
-#     config_alat_datapath,
-#     config_paths_energy,
-#     config_paths_forces,
-# )
-# from fim import FIM_jl, FIM_nd
-
-# from convex_optimization import ConvexOpt
-# from leastsq import leastsq, compare_opt_results, WeightIndicatorConfiguration
-# from summary import Summary
-# from utils import WORK_DIR, eps, tol, set_directory, set_file
-# from termination import check_convergence, get_results_array, check_periodicity
-
-
-# np.random.seed(2022)
-
-# # Define the models
-# tmp_model = ModelAlatBase(config_alat_datapath, nprocs=20)
-# orig_best_fit = tmp_model.best_fit
-# default_best_fit = tmp_model._default_bestfit
-# nparams = tmp_model.nparams
-# model_PD = ModelPhononDispersion()
-# warmup = 0  # How many steps are used as a warm-up
-
-
-# ################################################################################
-
-
-# step = 0
-
-# # Find how many steps have been completed
-# while True:
-#     STEP_DIR = WORK_DIR / "steps" / str(step)
-#     if STEP_DIR.exists():
-#         step += 1
-#     else:
-#         laststep_finalfile = STEP_DIR / "new_predictions.txt"
-#         if step > 0:
-#             if laststep_finalfile.exists():
-#                 # The previous step is completely done, we can go to the next
-#                 # step.
-#                 step += 1
-#             else:
-#                 # Subtract 1 before breaking because the last step is not
-#                 # completely done.
-#                 step -= 1
-#         print(step, "steps have been done.")
-#         break
-
-# while step < 100:
-#     print("Calculation for step", step)
-#     STEP_DIR = set_directory(WORK_DIR / "steps" / str(step))
-
-#     # Add summary
-#     summary = Summary(STEP_DIR / "summary.json")
-
-#     if step:
-#         PREV_STEP_DIR = WORK_DIR / "steps" / str(step - 1)
-#         prev_bestfit_file = PREV_STEP_DIR / "bestfit.txt"
-#         params = np.loadtxt(prev_bestfit_file)
-#     else:
-#         params = default_best_fit  # np.zeros(nparams)
-#     print("Parameters:", params)
-
-#     ############################################################################
-
-#     # Compute the FIM
-#     FIM_DIR = set_directory(STEP_DIR / "FIM")
-#     FIM_E_DIR = set_directory(FIM_DIR / "energy")
-#     FIM_F_DIR = set_directory(FIM_DIR / "forces")
-
-#     # FIM of energy vs lattice constant curve
-#     print("Compute the FIM for energy curve")
-#     fim_EC_file = FIM_DIR / "phonondispersion.npy"
-#     if fim_EC_file.exists():
-#         fim_EC = np.load(fim_EC_file)
-#     else:
-#         fim_EC_model = FIM_jl(model_PD)
-#         fim_EC = fim_EC_model.compute_FIM(params)
-#         np.save(fim_EC_file, fim_EC)
-
-#     # FIMs of energy and forces
-#     print("Compute the FIMs for forces for each configuration")
-#     nconfig_E = len(config_paths_energy)
-#     nconfig_F = len(config_paths_forces)
-
-#     # Try to use multiprocessing to parallelize FIM calculation. The derivative
-#     # is calculated using numdifftools.
-#     test_id_items_energy = [[ii, cpath] for ii, cpath in enumerate(config_paths_energy)]
-#     test_id_items_forces = [[ii, cpath] for ii, cpath in enumerate(config_paths_forces)]
-
-#     # Parallel run starts here
-#     # Function to use in multiprocessing to compute FIM
-#     def compute_FIM_energy_1config(test_id_item):
-#         ii, cpath = test_id_item
-#         identifier = ".".join((Path(cpath).name).split(".")[:-1])
-#         fim_E_file = FIM_E_DIR / f"{identifier}.npy"
-
-#         # Energy
-#         if fim_E_file.exists():
-#             fim_E = np.load(fim_E_file)
-#         else:
-#             fim_E_model = FIM_nd(ModelAlatBase(cpath, qoi=["energy"]))
-#             fim_E = fim_E_model.compute_FIM(params)
-#             np.save(fim_E_file, fim_E)
-
-#         return fim_E
-
-#     def compute_FIM_forces_1config(test_id_item):
-#         ii, cpath = test_id_item
-#         identifier = ".".join((Path(cpath).name).split(".")[:-1])
-#         fim_F_file = FIM_F_DIR / f"{identifier}.npy"
-
-#         # Forces
-#         if fim_F_file.exists():
-#             fim_F = np.load(fim_F_file)
-#         else:
-#             fim_F_model = FIM_nd(ModelAlatBase(cpath, qoi=["forces"]))
-#             fim_F = fim_F_model.compute_FIM(params)
-#             np.save(fim_F_file, fim_F)
-
-#         return fim_F
-
-#     # Define function to run parallel calculation for FIM over single
-#     # configurations
-#     def run_FIM_mp(test_id_items, FIM_fn, nprocs):
-#         nconfigs = len(test_id_items)
-#         fim_tensor = np.empty((nconfigs, nparams, nparams))
-
-#         pbar = tqdm(total=nconfigs)
-#         # Split the calculation into batches
-#         nbatch = int(np.ceil(nconfigs / nprocs))
-#         cpath_batch = []
-#         for n in range(nbatch):
-#             batch = test_id_items[n * nprocs : (n + 1) * nprocs]
-#             cpath_batch.append(batch)
-#         # Run parallel calculation for each batch
-#         ndone = 0  # Number of calculations done
-#         for batch in cpath_batch:
-#             nitems = len(batch)
-#             nprocs = min([nprocs, nitems])  # Don't waste compute resource
-#             pool = Pool(nprocs)
-#             fim_tensor[ndone : ndone + nitems] = np.array(pool.map(FIM_fn, batch))
-#             ndone += nitems
-#             pbar.update(n=nitems)
-#             pool.close()
-#         pbar.close()
-
-#         return fim_tensor
-
-#     # Run FIM calculation
-#     nprocs = 20
-#     fim_E_tensor = run_FIM_mp(test_id_items_energy, compute_FIM_energy_1config, nprocs)
-#     fim_F_tensor = run_FIM_mp(test_id_items_forces, compute_FIM_forces_1config, nprocs)
-
-#     ############################################################################
-#     # Solve the convex optimization problem
-#     print("Solve convex optimization problem")
-#     cvx_file = set_file(STEP_DIR / "cvx_result.pkl")
-#     cvx_tol = tol ** 0.75
-#     # Instantiate convex optimization class
-#     cvxopt = ConvexOpt(fim_EC, fim_E_tensor, fim_F_tensor, normalize=True)
-
-#     # Solve
-#     # while cvx_tol < 1e-1:
-#     #     try:
-#     # I set the tolerance this way so that I can update the tolerance
-#     # if the calculation fails.
-#     solver = dict(
-#         solver=cp.SCS,
-#         max_iters=100_000_000,
-#         eps=cvx_tol,
-#         acceleration_lookback=0,
-#         normalize=True,
-#         scale=cvx_tol ** 0.5,
-#     )
-
-#     if cvx_file.exists():
-#         cvxopt.result = pickle.load(open(cvx_file, "rb"))
-#     else:
-#         cvxopt.solve(solver=solver)
-#         pickle.dump(cvxopt.result, open(cvx_file, "wb+"), protocol=4)
-#     #     break
-#     # except SolverError:
-#     #     # Soften the termination condition
-#     #     cvx_tol *= 10
-#     #     print("Increase the tolerance to", cvx_tol)
-
-#     summary.update(cvxopt.result, "convex optimization")
-
-#     ############################################################################
-
-#     # Interpret the result of the convex optimization problem and get the
-#     # indicator configurations
-#     print("Get the reduced configurations")
-#     configs_weights_file = set_file(STEP_DIR / "configs_weights.pkl")
-#     reduced_configs_E_dir = set_directory(STEP_DIR / "reduced_configs/energy")
-#     reduced_configs_F_dir = set_directory(STEP_DIR / "reduced_configs/forces")
-
-#     if configs_weights_file.exists():
-#         configs_weights = pickle.load(open(configs_weights_file, "rb"))
-#     else:
-#         # Get the weights of the reduced configurations
-#         ss = step if step > warmup else 0
-#         configs_weights = cvxopt.get_configs_weights(ss, cvx_tol)
-#         pickle.dump(configs_weights, open(configs_weights_file, "wb+"))
-#         # Copy the configurations
-#         cvxopt.copy_configurations(configs_weights, reduced_configs_E_dir, "energy")
-#         cvxopt.copy_configurations(configs_weights, reduced_configs_F_dir, "forces")
-
-#     use_energy = False
-#     use_forces = False
-#     if len(configs_weights["energy"]) > 0:
-#         use_energy = True
-#     if len(configs_weights["forces"]) > 0:
-#         use_forces = True
-#     summary.update(configs_weights, "reduced configurations weights")
-
-#     ############################################################################
-
-#     # Train the model with the reduced configurations
-#     print("Train the model with the reduced configurations")
-#     opt_results_file = set_file(STEP_DIR / "opt_results.pkl")
-#     # Instantiate the model
-#     weight_E = None
-#     weight_F = None
-#     config_path_E = None
-#     config_path_F = None
-#     if use_energy:
-#         weight_E = WeightIndicatorConfiguration(
-#             energy_weights_info=configs_weights["energy"]
-#         )
-#         config_path_E = reduced_configs_E_dir
-#     if use_forces:
-#         weight_F = WeightIndicatorConfiguration(
-#             forces_weights_info=configs_weights["forces"]
-#         )
-#         config_path_F = reduced_configs_F_dir
-
-#     model_EF = ModelAlat(config_path_E, config_path_F, weight_E, weight_F, nprocs=20)
-#     # Set the Lagrange multiplier to be the number of predictions
-#     gamma = 0.0
-#     model_EF.gamma = gamma
-
-#     if opt_results_file.exists():
-#         opt_results = pickle.load(open(opt_results_file, "rb"))
-#     else:
-#         # To have more confident in finding the "true" best fit, we will try
-#         # several different starting points
-#         starting_points = np.row_stack((orig_best_fit, default_best_fit))
-#         # Previous step's best fit
-#         if step:
-#             prev_bestfit_file = PREV_STEP_DIR / "bestfit.txt"
-#             prev_best_fit = np.loadtxt(prev_bestfit_file)
-#             starting_points = np.row_stack((starting_points, prev_best_fit))
-#         # # Random points
-#         # # We will get a different set of random points in every iteration.
-#         # nrand_points = 5
-#         # rand_points = orig_best_fit + np.random.randn(nrand_points, nparams)
-#         # starting_points = np.row_stack((starting_points, rand_points))
-
-#         # Optimizer setting
-#         # If there are more parameters than data, then we shoot for atol
-#         # termination condition.
-#         tol = eps ** 0.75
-#         if model_EF.npred >= model_EF.nparams:
-#             # Use geodesic LM
-#             method = "geodesiclm"
-#             leastsq_kwargs = dict(
-#                 atol=1e-4,
-#                 xtol=tol,
-#                 xrtol=tol,
-#                 ftol=tol,
-#                 frtol=tol,
-#                 gtol=tol,
-#                 Cgoal=tol,
-#                 maxiters=1000000,
-#                 avmax=0.5,
-#                 factor_accept=5,
-#                 factor_reject=2,
-#                 h1=1e-6,
-#                 h2=1e-1,
-#                 imethod=1,
-#                 iaccel=0,
-#                 ibold=0,
-#                 ibroyden=1,
-#                 print_level=3,
-#             )
-#         else:
-#             # Use TRF. The Notes in scipy.optimize.least_squares mentions that
-#             # this algorithm tries to avoid the boundaries.
-#             method = "trf"
-#             leastsq_kwargs = {
-#                 "ftol": tol,
-#                 "xtol": tol,
-#                 "gtol": tol,
-#                 "max_nfev": 1000000,
-#                 "verbose": 2,
-#             }
-
-#         # Optimization with different starting points
-#         opt_results = {}
-#         for ii, point in enumerate(starting_points):
-#             print("Optimization with starting point:", point)
-#             tmp_opt_result = leastsq(model_EF, point, method, **leastsq_kwargs)
-#             opt_results.update({ii: tmp_opt_result})
-#             pickle.dump(opt_results, open(opt_results_file, "wb+"))
-
-#     # Comparing the cost and get the point with the lowest cost
-#     new_bestfit, opt_cost, opt_result = compare_opt_results(opt_results)
-#     np.savetxt(STEP_DIR / "bestfit.txt", new_bestfit)
-
-#     print(opt_result[1]["converged"], opt_result[1]["msg"])
-#     print("New best fit:", new_bestfit)
-#     print("Optimal cost:", opt_cost)
-#     summary.update(opt_result, "model training", gamma=gamma)
-
-#     ############################################################################
-
-#     # Calculate the new energy vs lattice constant curve
-#     preds_file = STEP_DIR / "new_predictions.txt"
-#     if preds_file.exists():
-#         new_preds = np.loadtxt(preds_file)
-#     else:
-#         new_preds = model_PD.predictions_dict(new_bestfit)["energies"].flatten()
-#         np.savetxt(preds_file, new_preds)
-
-#     print("New predictions:", new_preds)
-#     summary.update(new_preds, "new predictions")
-
-#     ############################################################################
-
-#     # Check termination condition
-#     periodic = False
-#     terminate = False
-#     if step <= warmup:
-#         # We are not going to check the termination condition if we just
-#         # started.
-#         pass
-#     else:
-#         if step > 2:
-#             results_array = get_results_array(
-#                 ["convex optimization", "relative error"], step
-#             )
-#             # Check periodicity only when periodicity not detected.
-#             # Use the convex optimization result to check the periodicity.
-#             periodic, start, period = check_periodicity(results_array)
-#             if periodic:
-#                 print(f"Start at {start}, period {period}")
-#                 print("Periodicity detected:", periodic)
-#                 if len(results_array) >= np.ceil(start + 2.5 * period):
-#                     terminate = True
-
-#         if not periodic:
-#             terminate = check_convergence(step, tol=cvx_tol ** 0.5)
-#             print("Converged:", terminate)
-
-#     if terminate:
-#         break
-
-#     step += 1

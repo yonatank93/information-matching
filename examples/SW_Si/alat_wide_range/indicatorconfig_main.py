@@ -128,7 +128,7 @@ while step < maxsteps:
         fim_target = np.load(fim_target_file)
     else:
         fim_target_model = FIM_nd(model_target.residuals, step=0.1 * params + 1e-4)
-        fim_target = fim_target_model.compute_FIM(params)
+        fim_target = fim_target_model.FIM(params)
         np.save(fim_target_file, fim_target)
 
     # FIMs of energy and forces
@@ -142,7 +142,7 @@ while step < maxsteps:
 
     # Define functions to compute energy and forces FIMs (separately) for one
     # configuration. These functions will be used in parallelization.
-    def compute_FIM_energy_1config(test_id_item):
+    def FIM_energy_1config(test_id_item):
         ii, cpath = test_id_item
         # Path to the configuration file
         identifier = ".".join((Path(cpath).name).split(".")[:-1])
@@ -159,12 +159,12 @@ while step < maxsteps:
                 ModelTrainingBase(cpath, qoi=["energy"]).predictions,
                 step=0.1 * params + 1e-4,
             )
-            fim_E = fim_E_model.compute_FIM(params)
+            fim_E = fim_E_model.FIM(params)
             np.save(fim_E_file, fim_E)
 
         return fim_E
 
-    def compute_FIM_forces_1config(test_id_item):
+    def FIM_forces_1config(test_id_item):
         ii, cpath = test_id_item
         # Path to the configuration file
         identifier = ".".join((Path(cpath).name).split(".")[:-1])
@@ -181,7 +181,7 @@ while step < maxsteps:
                 ModelTrainingBase(cpath, qoi=["forces"]).predictions,
                 step=0.1 * params + 1e-4,
             )
-            fim_F = fim_F_model.compute_FIM(params)
+            fim_F = fim_F_model.FIM(params)
             np.save(fim_F_file, fim_F)
 
         return fim_F
@@ -193,7 +193,7 @@ while step < maxsteps:
         fim_E_tensor = np.array(
             list(
                 tqdm(
-                    p.imap(compute_FIM_energy_1config, enumerate(Configs.files_energy)),
+                    p.imap(FIM_energy_1config, enumerate(Configs.files_energy)),
                     total=Configs.nconfigs_energy,
                 )
             )
@@ -203,7 +203,7 @@ while step < maxsteps:
         fim_F_tensor = np.array(
             list(
                 tqdm(
-                    p.imap(compute_FIM_forces_1config, enumerate(Configs.files_forces)),
+                    p.imap(FIM_forces_1config, enumerate(Configs.files_forces)),
                     total=Configs.nconfigs_forces,
                 )
             )

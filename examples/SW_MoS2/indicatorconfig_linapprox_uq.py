@@ -113,7 +113,7 @@ else:
     fim_inst = FIM_jl(
         model.residuals, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
     )
-    J = fim_inst.compute_jacobian(bestfit)
+    J = fim_inst.Jacobian(bestfit)
     np.save(jac_train_file, J)
 # FIM
 fim = J.T @ J
@@ -264,7 +264,7 @@ else:
     Jac_target_inst = FIM_jl(
         model_target.residuals, h=0.1, t=2.0001, maxiters=100, abstol=tol, reltol=tol
     )
-    J_target = -Jac_target_inst.compute_jacobian(bestfit)
+    J_target = -Jac_target_inst.Jacobian(bestfit)
     # bestfit, h=0.1, t=2.0, maxiters=100, abstol=1e-8, reltol=1e-8
     J_target *= model_target.std.reshape((-1, 1))
     np.save(jac_target_file, J_target)

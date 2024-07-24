@@ -27,7 +27,7 @@ for idx in tqdm(range(case)):  # Iterate over bus index
         jac = np.load(jac_file)
         fim = np.loadtxt(fim_file, delimiter=",")
     else:
-        jac = fim_fn.compute_jacobian(model.x0, PMU_idx=idx)
+        jac = fim_fn.Jacobian(model.x0, PMU_idx=idx)
         fim = jac.T @ jac
 
         # Export
@@ -38,5 +38,5 @@ for idx in tqdm(range(case)):  # Iterate over bus index
 
 
 # # Compute the FIM of combined configurations
-# jac = fim_fn.compute_jacobian(model.x0, PMU_idx=np.arange(case) + 1)
+# jac = fim_fn.Jacobian(model.x0, PMU_idx=np.arange(case) + 1)
 # fim = jac.T @ jac
