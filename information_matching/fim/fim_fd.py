@@ -42,7 +42,7 @@ def default_transform(x):
 
 
 class FIM_fd:
-    """A class to compute the jacobian and the FIM of a model using finite difference
+    """A class to compute the Jacobian and the FIM of a model using finite difference
 
     Parameters
     ----------
@@ -85,8 +85,8 @@ class FIM_fd:
 
         return model_eval
 
-    def compute_jacobian(self, x, *args, **kwargs):
-        """Compute the jacobian of the model, evaluated at parameter ``x``.
+    def Jacobian(self, x, *args, **kwargs):
+        """Compute the Jacobian of the model, evaluated at parameter ``x``.
         Parameter ``x`` should be written in the parameterization that the model
         uses.
 
@@ -126,10 +126,10 @@ class FIM_fd:
             return self._deriv_fn(fn, x, vs[ii], h[ii])
 
         # Note: There is a possiblility to parallelize this part in the future
-        jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
-        return jacobian_T.T
+        Jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
+        return Jacobian_T.T
 
-    def compute_FIM(self, x, *args, **kwargs):
+    def FIM(self, x, *args, **kwargs):
         """Compute the FIM.
 
         Parameters
@@ -144,8 +144,8 @@ class FIM_fd:
         -------
         np.ndarray (nparams, nparams)
         """
-        Jac = self.compute_jacobian(x, *args, **kwargs)
+        Jac = self.Jacobian(x, *args, **kwargs)
         return Jac.T @ Jac
 
     def __call__(self, x, *args, **kwargs):
-        return self.compute_FIM(x, *args, **kwargs)
+        return self.FIM(x, *args, **kwargs)

@@ -39,34 +39,34 @@ def test_evaluation_fd():
     # The comparison tolerance should be set pretty high, because this method is not that
     # accurate
     fim_fn = FIM_fd(fn)
-    jac_fd = fim_fn.compute_jacobian(xlist)
-    # Compare the jacobian
+    jac_fd = fim_fn.Jacobian(xlist)
+    # Compare the Jacobian
     # The first derivative error should be of order h (default h=0.1)
     assert np.all(np.diag(jac_fd - jac_truth) / np.diag(jac_truth) < 0.1)
     # Compare the FIM
     # The error should be of order sqrt(h)
-    fim_fd = fim_fn.compute_FIM(xlist)
+    fim_fd = fim_fn.FIM(xlist)
     assert np.all(np.diag(fim_fd - fim_truth) / np.diag(fim_truth) < np.sqrt(0.1))
 
 
 def test_evaluation_nd():
     fim_fn = FIM_nd(fn)
-    jac_nd = fim_fn.compute_jacobian(xlist)
-    # Compare the jacobian
+    jac_nd = fim_fn.Jacobian(xlist)
+    # Compare the Jacobian
     assert np.all(np.diag(jac_nd - jac_truth) / np.diag(jac_truth) < 1e-8)
     # Compare the FIM
-    fim_nd = fim_fn.compute_FIM(xlist)
+    fim_nd = fim_fn.FIM(xlist)
     assert np.all(np.diag(fim_nd - fim_truth) / np.diag(fim_truth) < 1e-8)
 
 
 # def test_evaluation_jl():
 #     if julia_avail:
 #         fim_fn = FIM_jl(fn)
-#         jac_jl = fim_fn.compute_jacobian(xlist)
-#         # Compare the jacobian
+#         jac_jl = fim_fn.Jacobian(xlist)
+#         # Compare the Jacobian
 #         assert np.all(np.diag(jac_jl - jac_truth) / np.diag(jac_truth) < 1e-8)
 #         # Compare the FIM
-#         fim_jl = fim_fn.compute_FIM(xlist)
+#         fim_jl = fim_fn.FIM(xlist)
 #         assert np.all(np.diag(fim_jl - fim_truth) / np.diag(fim_truth) < 1e-8)
 
 
@@ -75,10 +75,10 @@ def test_kwargs_fd():
     fim_fn = FIM_fd(fn_kwargs, deriv_fn=CD, h=h)
     # Test for exception if function kwargs is not given
     with pytest.raises(TypeError):
-        _ = fim_fn.compute_jacobian(xlist)
+        _ = fim_fn.Jacobian(xlist)
     # Test the Jacobian value
     # The first derivative error should be of order h^2, since we are using CD
-    jac_fd = fim_fn.compute_jacobian(xlist, tlist)
+    jac_fd = fim_fn.Jacobian(xlist, tlist)
     assert np.all(np.abs((jac_fd - jac_kwargs_truth) / jac_kwargs_truth) < h**2)
     # Test the FIM value
     # The error should be of order h
@@ -91,9 +91,9 @@ def test_kwargs_nd():
     fim_fn = FIM_nd(fn_kwargs, **kwargs)
     # Test for exception if function kwargs is not given
     with pytest.raises(TypeError):
-        _ = fim_fn.compute_jacobian(xlist)
+        _ = fim_fn.Jacobian(xlist)
     # Test the Jacobian value
-    jac_nd = fim_fn.compute_jacobian(xlist, tlist)
+    jac_nd = fim_fn.Jacobian(xlist, tlist)
     assert np.allclose(jac_nd, jac_kwargs_truth, atol=1e-4, rtol=1e-4)
     # Test the FIM value
     fim_nd = fim_fn(xlist, tlist)
@@ -102,13 +102,13 @@ def test_kwargs_nd():
 
 # def test_kwargs_jl():
 #     if julia_avail:
-#         kwargs = dict(h=0.01)  # Keyword argument for Julia's Numdifftools.jacobian
+#         kwargs = dict(h=0.01)  # Keyword argument for Julia's Numdifftools.Jacobian
 #         fim_fn = FIM_jl(fn_kwargs, **kwargs)
 #         # Test for exception if function kwargs is not given
 #         with pytest.raises(TypeError):
-#             _ = fim_fn.compute_jacobian(xlist)
+#             _ = fim_fn.Jacobian(xlist)
 #         # Test the Jacobian value
-#         jac_jl = fim_fn.compute_jacobian(xlist, tlist)
+#         jac_jl = fim_fn.Jacobian(xlist, tlist)
 #         assert np.allclose(jac_jl, jac_kwargs_truth, atol=1e-4, rtol=1e-4)
 #         # Test the FIM value
 #         fim_jl = fim_fn(xlist, tlist)
