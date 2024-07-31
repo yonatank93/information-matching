@@ -1,11 +1,9 @@
 import numdifftools as nd
 
-
-def default_transform(x):
-    return x
+from .fim_base import FIMBase
 
 
-class FIM_nd:
+class FIM_nd(FIMBase):
     """A class to compute the Jacobian and the FIM of a model using numdifftools.
 
     Parameters
@@ -22,19 +20,8 @@ class FIM_nd:
     """
 
     def __init__(self, model, transform=None, inverse_transform=None, **kwargs):
-        self.model = model
-        self.jac_func = nd.Jacobian(self.model, method="forward", **kwargs)
-
-        # Get the parameter transformation
-        if transform is None:
-            self.transform = default_transform
-        else:
-            self.transform = transform
-
-        if inverse_transform is None:
-            self.inverse_transform = default_transform
-        else:
-            self.inverse_transform = inverse_transform
+        super().__init__(model, transform, inverse_transform)
+        self.jac_func = nd.Jacobian(self._model_wrapper, method="forward", **kwargs)
 
     def Jacobian(self, x, *args, **kwargs):
         """Compute the Jacobian of the model, evaluated at parameter ``x``.
@@ -55,24 +42,3 @@ class FIM_nd:
         """
         params = self.transform(x)
         return self.jac_func(params, *args, **kwargs)
-
-    def FIM(self, x, *args, **kwargs):
-        """Compute the FIM.
-
-        Parameters
-        ----------
-        x: np.ndarray (nparams,)
-            Parameter values in which the FIM is evaluated. It should be
-            written in the parameterization that the model uses.
-        args, kwargs:
-            Additional positional and keyword arguments for the model.
-
-        Returns
-        -------
-        np.ndarray (nparams, nparams)
-        """
-        Jac = self.Jacobian(x, *args, **kwargs)
-        return Jac.T @ Jac
-
-    def __call__(self, x, *args, **kwargs):
-        return self.FIM(x, *args, **kwargs)

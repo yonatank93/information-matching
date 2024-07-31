@@ -1,5 +1,7 @@
 import numpy as np
 
+from .fim_base import FIMBase
+
 
 # Forward Difference Formulas
 def FD(f, x, v, h):
@@ -37,11 +39,7 @@ def CD4(f, x, v, h):
     ) / (12 * h)
 
 
-def default_transform(x):
-    return x
-
-
-class FIM_fd:
+class FIM_fd(FIMBase):
     """A class to compute the Jacobian and the FIM of a model using finite difference
 
     Parameters
@@ -62,26 +60,15 @@ class FIM_fd:
     """
 
     def __init__(self, model, transform=None, inverse_transform=None, deriv_fn=FD, h=0.1):
-        self.model = model
+        super().__init__(model, transform, inverse_transform)
         self._deriv_fn = deriv_fn
         self._h = h
 
-        # Get the parameter transformation
-        if transform is None:
-            self.transform = default_transform
-        else:
-            self.transform = transform
-
-        if inverse_transform is None:
-            self.inverse_transform = default_transform
-        else:
-            self.inverse_transform = inverse_transform
-
-    def _model_wrapper(self, *args, **kwargs):
+    def _model_args_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
 
         def model_eval(x):
-            return self.model(x, *args, **kwargs)
+            return self._model_wrapper(x, *args, **kwargs)
 
         return model_eval
 
@@ -103,7 +90,7 @@ class FIM_fd:
         np.ndarray (npred, nparams)
         """
         # Model to compute the derivative of
-        fn = self._model_wrapper(*args, **kwargs)
+        fn = self._model_args_wrapper(*args, **kwargs)
         # Apply parameter transformation
         params = self.transform(x)
         nparams = len(params)
@@ -128,24 +115,3 @@ class FIM_fd:
         # Note: There is a possiblility to parallelize this part in the future
         Jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
         return Jacobian_T.T
-
-    def FIM(self, x, *args, **kwargs):
-        """Compute the FIM.
-
-        Parameters
-        ----------
-        x: np.ndarray (nparams,)
-            Parameter values in which the FIM is evaluated. It should be
-            written in the parameterization that the model uses.
-        args, kwargs:
-            Additional positional and keyword arguments for the model.
-
-        Returns
-        -------
-        np.ndarray (nparams, nparams)
-        """
-        Jac = self.Jacobian(x, *args, **kwargs)
-        return Jac.T @ Jac
-
-    def __call__(self, x, *args, **kwargs):
-        return self.FIM(x, *args, **kwargs)
