@@ -82,7 +82,7 @@ class ConvexOpt:
             The dictionary containing the information of the solver that will
             be passed into ``cp.Problem().solve()``. The dictionary should
             contain the name of the solver and other keyword arguments for the
-            solver. Default: ``{"solver"=cp.OSQP}``
+            solver. Default: ``{"solver"=cp.SDPA}``
         """
         self.problem.solve(**solver)
 
