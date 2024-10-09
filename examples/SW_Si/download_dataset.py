@@ -8,7 +8,7 @@ import tarfile
 FILE_PATH = Path(__file__).resolve().parent
 
 # Check if the dataset is already downloaded and extracted
-example_name = "SW_si"
+example_name = "SW_Si"
 dataset_path = FILE_PATH / "sw_si_training_dataset"
 
 if not dataset_path.exists():
