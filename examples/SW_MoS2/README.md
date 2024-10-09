@@ -74,6 +74,10 @@ Additional external requirements:
 
 ## Guide
 
+First, download the candidate dataset to use for this example. This can be done by
+executing `python download_dataset.py` in the current directory. This script downloads the
+tarball containing the dataset and extract it.
+
 To find the indicator configurations, run `inndicatorconfig_main.py`. After that, run
 `indicatorconfig_linapprox.py` to get the uncertainty of the parameters and the QoI using
 a linear approximation based on the FIM and Gaussian distribution.
