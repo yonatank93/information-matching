@@ -38,6 +38,9 @@ $ pip install -r requirements.txt
 
 ## Guide
 
+0. To help reproducing the results, a script to download the pre-generated FIMs and some
+   necessary data to plot the results is provided. Execute `python download_dataset.py`
+   to download these data.
 1. First, open and execute `00_generate_transmission_loss_data.ipynb` to extract the
    transmission loss data. These data are needed to plot the results of the informamtion-
    matching calculation. Without this data and the plots, the information-matching results
