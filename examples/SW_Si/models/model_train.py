@@ -25,7 +25,7 @@ class Configs:
     configuration files.
     """
 
-    alat_datapath = SWSI_DIR / "training_dataset_varying_alat"
+    alat_datapath = SWSI_DIR / "sw_si_training_dataset"
     path_energy = alat_datapath / "unperturbed"
     path_forces = alat_datapath / "perturbed"
     files_energy = glob.glob(str(path_energy / "*"))

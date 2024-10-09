@@ -31,9 +31,10 @@ Additional external requirements:
 
 ## Content
 
-* training_dataset_varying_alat - Contains all candidate configurations for diamond
+* sw_si_training_dataset - Contains all candidate configurations for diamond
   silicon system with various lattice length. For each lattice constant, there is a
   perfect diamond lattice configuration as well as some perturbed diamond configurattions.
+  This dataset needs to be downloaded, e.g., by executing `python download_dataset.py`.
 * models - A module that contains all the models needed to do the indicator configuration
   calculation for SW Si cases.
 * alat_small_range - The target QoI is the energy change vs lattice compression for
