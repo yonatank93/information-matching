@@ -31,7 +31,7 @@ class Configs:
     configuration files.
     """
 
-    dataset_path = SWMoS2_DIR / "original_configs"
+    dataset_path = SWMoS2_DIR / "sw_mos2_training_dataset"
     dataset_files = sorted(glob.glob(str(dataset_path / "*")))
     ids = [Path(path).name for path in dataset_files]
     nconfigs = len(dataset_files)
