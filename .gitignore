@@ -200,13 +200,13 @@ examples/ORCA/data/FIMs/source
 examples/ORCA/results/*/
 
 # Large files
-examples/ORCA/data/transmission_loss*
-examples/ORCA/data/FIMS/fim_environment.tar.gz
-examples/ORCA/data/FIMS/fim_source.tar.gz
-examples/ORCA/data/FIMS/environment
-examples/ORCA/data/FIMS/source
-examples/SW_MoS2/sw_mos2_training_dataset*
-examples/SW_Si/sw_si_training_dataset*
+# examples/ORCA/data/transmission_loss*
+# examples/ORCA/data/FIMS/fim_environment.tar.gz
+# examples/ORCA/data/FIMS/fim_source.tar.gz
+# examples/ORCA/data/FIMS/environment
+# examples/ORCA/data/FIMS/source
+# examples/SW_MoS2/sw_mos2_training_dataset*
+# examples/SW_Si/sw_si_training_dataset*
 
 # Slurm jobscript
 submit_job.sh
