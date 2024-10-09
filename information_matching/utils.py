@@ -7,6 +7,8 @@
 
 from pathlib import Path
 import shutil
+import requests
+import tarfile
 
 import numpy as np
 
@@ -15,7 +17,7 @@ EXAMPLES_DIR = PARENT_DIR / "examples"
 
 # Tolerances in the calculation
 eps = np.finfo(float).eps
-tol = eps ** 0.5
+tol = eps**0.5
 
 
 def set_directory(path):
@@ -53,3 +55,43 @@ def copy_configurations(configs_weights_dict, source_dir, target_dir):
     for config_id in configs_weights_dict:
         path = Path(source_dir) / config_id
         shutil.copy(path, target_dir)
+
+
+def download_dataset(dataset_info):
+    """A function to download and extract the dataset.
+
+    Parameters
+    ----------
+    dataset_info : dict
+        A dictionary with the following keys:
+        - dataset_path: Path
+            The path to the directory where the dataset will be extracted.
+        - url: str
+            The URL from which the dataset will be downloaded.
+        - tar_path: Path
+            The target path to the tar.gz file that will be downloaded.
+    """
+    # Get the values from the dictionary
+    dataset_path = Path(dataset_info["dataset_path"])
+    url = dataset_info["url"]
+    tar_path = Path(dataset_info["tar_path"])
+
+    # Check if the dataset is already downloaded and extracted
+    if not dataset_path.exists():
+        # Check if the tar.gz file is already downloaded
+        if not tar_path.exists():
+            # Download the dataset
+            print(f"Downloading dataset from {url}")
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
+                with open(tar_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+        # Extract the dataset
+        print(f"Extracting dataset to {dataset_path}")
+        tf = tarfile.open(tar_path, "r:gz")
+        tf.extractall(dataset_path.parent)
+        tf.close()
+    else:
+        print(f"Dataset already exists at {dataset_path}")
