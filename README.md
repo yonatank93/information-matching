@@ -7,15 +7,15 @@ Design (OED) and Active Learning (AL) tasks.
 
 
 
-# Installation
+## Installation
 
-## Using pip
+### Using pip
 
 ``` bash
 pip install information-matching
 ```
 
-## From source
+### From source
 
 ``` bash
 git clone https://github.com/yonatank93/information-matching.git
@@ -25,7 +25,7 @@ pip install -e .
 
 
 
-# Usage
+## Usage
 
 A typical workflow to use information-matching method to find the indicator configurations
 and the corresponding weights is as follows:
@@ -44,7 +44,7 @@ and
 
 
 	
-# Examples
+## Examples
 
 We provide several examples of the application of information-matching in OED and AL
 problems in several different scientific fields. Use these examples to reproduce the
@@ -74,14 +74,14 @@ those examples.
 
 
 
-# How to cite
+## How to cite
 
 We are working on publishing a paper about this method.
 
 
 
 
-# Contact
+## Contact
 
 Yonatan Kurniawan </br>
 email: [kurniawanyo@outlook.com](mailto:kurniawanyo@outlook.com)
