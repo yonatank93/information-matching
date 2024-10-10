@@ -17,7 +17,7 @@ import numpy as np
 import cvxpy as cp
 
 from information_matching.fim.fim_jl import FIM_jl
-from information_matching.convex_optimization import ConvexOpt
+from information_matching.convex_optimization import ConvexOpt, compare_weights
 from information_matching.leastsq import leastsq, compare_opt_results
 from information_matching.summary import Summary
 from information_matching.utils import (
@@ -242,14 +242,7 @@ while step < maxsteps:
     if step >= warmup:
         old_opt_weights = copy.deepcopy(opt_weights)
         # Compare the old optimal weights to the current result
-        for conf in current_weights:
-            if conf in opt_weights:
-                # Get the maximum weight between value stored in the current optimal
-                # weights and the convex optimization result
-                opt_weights[conf] = max([current_weights[conf], opt_weights[conf]])
-            else:
-                # Insert this weight to the optimal weight
-                opt_weights.update({conf: current_weights[conf]})
+        opt_weights = compare_weights(old_opt_weights, current_weights)
     else:
         old_opt_weights = {}
         opt_weights = copy.deepcopy(current_weights)
