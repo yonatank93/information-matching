@@ -3,6 +3,7 @@ corresponding post-processings, such as get the non-zero weights from the convex
 optimization output.
 """
 
+from copy import deepcopy
 import numpy as np
 import cvxpy as cp
 
@@ -336,9 +337,37 @@ class ConvexOpt:
         unscaled_weights = self._get_unscaled_weights(weights)
         dual_weights = self.result["dual_wm"]
         # Get non-zero weights
-        idx_nonzero_from_val = np.where(unscaled_weights > eps**2)[0]
+        idx_nonzero_from_val = np.where(unscaled_weights > zero_tol)[0]
         idx_nonzero_from_dual = np.where(dual_weights < zero_tol)[0]
         idx_nonzero_wm = list(
             set(idx_nonzero_from_val).intersection(idx_nonzero_from_dual)
         )
         return idx_nonzero_wm
+
+
+def compare_weights(old_weights, current_weights):
+    """Compare the weights from two different convex optimization iterations and return
+    the new optimal weights. For each configuration, the new optimal weight is the larger
+    of the two weights.
+
+    Parameters
+    ----------
+    old_weights: dict
+        The weights from the previous convex optimization iteration.
+    current_weights: dict
+
+    Returns
+    -------
+    new_weights: dict
+        The new optimal weights.
+    """
+    new_weights = deepcopy(old_weights)
+    for name, weight in current_weights.items():
+        if name in new_weights:
+            # If the configuration is already in the dictionary, update the weight to the
+            # larger of the two
+            new_weights[name] = max([weight, new_weights[name]])
+        else:
+            # If the configuration is not in the dictionary, add the new weight
+            new_weights.update({name: weight})
+    return new_weights
