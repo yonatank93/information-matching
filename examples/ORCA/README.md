@@ -38,9 +38,18 @@ $ pip install -r requirements.txt
 
 ## Guide
 
-0. To help reproducing the results, a script to download the pre-generated FIMs and some
-   necessary data to plot the results is provided. Execute `python download_dataset.py`
-   to download these data.
+0. Although this example uses a proprietary library, we have precomputed the necessary
+   data to reproduce the results. The data can be downloaded and extracted using an
+   internal function, for example by executing
+   ```python
+   from information_matching.utils import download_dataset, avail_dataset
+
+   # Print all available precomputed dataset
+   print(avail_dataset)
+
+   # Download dataset for underwater acoustic example
+   download_dataset(["transmission_loss", "fim_environment", "fim_source"])
+   ```
 1. First, open and execute `00_generate_transmission_loss_data.ipynb` to extract the
    transmission loss data. These data are needed to plot the results of the informamtion-
    matching calculation. Without this data and the plots, the information-matching results
