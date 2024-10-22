@@ -9,11 +9,11 @@ Design (OED) and Active Learning (AL) tasks.
 
 ## Installation
 
-### Using pip
+<!-- ### Using pip -->
 
-``` bash
-pip install information-matching
-```
+<!-- ``` bash -->
+<!-- pip install information-matching -->
+<!-- ``` -->
 
 ### From source
 
