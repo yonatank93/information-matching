@@ -74,15 +74,26 @@ Additional external requirements:
 
 ## Guide
 
-First, download the candidate dataset to use for this example. This can be done by
-executing `python download_dataset.py` in the current directory. This script downloads the
-tarball containing the dataset and extract it.
+1. First, download the candidate dataset to use for this example. This can be done by
+   executing the following commands
 
-To find the indicator configurations, run `inndicatorconfig_main.py`. After that, run
-`indicatorconfig_linapprox.py` to get the uncertainty of the parameters and the QoI using
-a linear approximation based on the FIM and Gaussian distribution.
+	``` Python
+	from information_matching.utils import download_dataset, avail_dataset
 
-Tips: We can initially set `maxsteps` and `warmup` in `indicatorconfig_main.py` to be the
-same large numbers, then use `parameter_variation.py` to infer the burnin period. Then, we
-can set `warmup` to this burnin value and rerun the indicator configuration calculation
-again.
+	# Print all available precomputed dataset
+	print(avail_dataset)
+
+	# Download the MoS2 candidate training atomic configurations
+	download_dataset("sw_mos2_training_dataset")
+	```
+
+2. To find the indicator configurations, run `indicatorconfig_main.py`.
+
+3. After that, run `indicatorconfig_linapprox.py` to get the uncertainty of the
+   parameters and the QoI using a linear approximation based on the FIM and Gaussian
+   distribution.
+
+**Tips:** We can initially set `maxsteps` and `warmup` in `indicatorconfig_main.py` to be
+the same large numbers, then use `parameter_variation.py` to infer the burnin period.
+Then, we can set `warmup` to this burnin value and rerun the indicator configuration
+calculation again.
