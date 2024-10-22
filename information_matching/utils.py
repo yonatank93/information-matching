@@ -7,17 +7,47 @@
 
 from pathlib import Path
 import shutil
-import requests
+import wget
 import tarfile
 
 import numpy as np
 
 PARENT_DIR = Path(__file__).absolute().parents[1]
 EXAMPLES_DIR = PARENT_DIR / "examples"
+DATASET_DIR = EXAMPLES_DIR / "dataset"
 
 # Tolerances in the calculation
 eps = np.finfo(float).eps
 tol = eps**0.5
+
+
+# Information that will be used to extract and place the dataset in the correct folder
+dataset_url = "https://figshare.com/ndownloader/files/49910310"
+dataset_info = {
+    # Underwater acoustic ORCA dataset
+    "transmission_loss": {
+        "tarfile": DATASET_DIR / "transmission_loss.tar.gz",
+        "target": EXAMPLES_DIR / "ORCA/data/transmission_loss",
+    },
+    "fim_environment": {
+        "tarfile": DATASET_DIR / "fim_environment.tar.gz",
+        "target": EXAMPLES_DIR / "ORCA/data/FIMs/environment",
+    },
+    "fim_source": {
+        "tarfile": DATASET_DIR / "fim_source.tar.gz",
+        "target": EXAMPLES_DIR / "ORCA/data/FIMs/source",
+    },
+    # Material science SW potentials dataset
+    "sw_si_training_dataset": {
+        "tarfile": DATASET_DIR / "sw_si_training_dataset.tar.gz",
+        "target": EXAMPLES_DIR / "SW_Si/sw_si_training_dataset",
+    },
+    "sw_mos2_training_dataset": {
+        "tarfile": DATASET_DIR / "sw_mos2_training_dataset.tar.gz",
+        "target": EXAMPLES_DIR / "SW_MoS2/sw_mos2_training_dataset",
+    },
+}
+avail_dataset = list(dataset_info)  # Available dataset names
 
 
 def set_directory(path):
@@ -57,41 +87,52 @@ def copy_configurations(configs_weights_dict, source_dir, target_dir):
         shutil.copy(path, target_dir)
 
 
-def download_dataset(dataset_info):
+def download_dataset(dataset_name):
     """A function to download and extract the dataset.
 
     Parameters
     ----------
-    dataset_info : dict
-        A dictionary with the following keys:
-        - dataset_path: Path
-            The path to the directory where the dataset will be extracted.
-        - url: str
-            The URL from which the dataset will be downloaded.
-        - tar_path: Path
-            The target path to the tar.gz file that will be downloaded.
+    dataset_name : str or list or "all"
+        The name of the dataset to download. See ``avail_dataset`` for available datasets.
     """
-    # Get the values from the dictionary
-    dataset_path = Path(dataset_info["dataset_path"])
-    url = dataset_info["url"]
-    tar_path = Path(dataset_info["tar_path"])
+    if isinstance(dataset_name, str):
+        if dataset_name == "all":
+            dataset_name = avail_dataset
+        else:
+            assert (
+                dataset_name in avail_dataset
+            ), f"Available datasets are {avail_dataset}"
+            dataset_name = [dataset_name]
+    for name in dataset_name:
+        _download_one_dataset(name)
 
-    # Check if the dataset is already downloaded and extracted
-    if not dataset_path.exists():
-        # Check if the tar.gz file is already downloaded
-        if not tar_path.exists():
-            # Download the dataset
-            print(f"Downloading dataset from {url}")
-            with requests.get(url, stream=True) as r:
-                r.raise_for_status()
-                with open(tar_path, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
+
+def _download_one_dataset(dataset_name):
+    """Download one dataset."""
+    # First, check if the specific dataset is already extracted
+    data_info_dict = dataset_info[dataset_name]
+    if not data_info_dict["target"].exists():
+        # If not, check if the entire dataset is already downloaded and extracted
+        if not DATASET_DIR.exists():
+            # Check if the tar.gz file is already downloaded
+            dataset_tarfile = (
+                EXAMPLES_DIR / f"information_matching_examples_dataset.tar.gz"
+            )
+            if not dataset_tarfile.exists():
+                # Download the dataset
+                print(f"Downloading dataset from {dataset_url}")
+                wget.download(dataset_url, str(dataset_tarfile))
+
+            # Extract the dataset
+            print(f"Extracting dataset to {DATASET_DIR}")
+            tf = tarfile.open(dataset_tarfile, "r:gz")
+            tf.extractall(DATASET_DIR.parent)
+            tf.close()
 
         # Extract the dataset
-        print(f"Extracting dataset to {dataset_path}")
-        tf = tarfile.open(tar_path, "r:gz")
-        tf.extractall(dataset_path.parent)
+        print(f"Extracting dataset to {data_info_dict['target']}")
+        tf = tarfile.open(data_info_dict["tarfile"], "r:gz")
+        tf.extractall(data_info_dict["target"].parent)
         tf.close()
-    else:
-        print(f"Dataset already exists at {dataset_path}")
+
+    print(f"{dataset_name} dataset is ready at {data_info_dict['target']}")

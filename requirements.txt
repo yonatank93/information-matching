@@ -6,4 +6,4 @@ jinja2
 cvxpy
 sdpa-python
 scs
-requests
+wget

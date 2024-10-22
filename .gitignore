@@ -175,13 +175,6 @@ cython_debug/
 *.log
 log.*
 
-# Theory
-theory/plots
-
-# Uncompressed dataset
-examples/SW_Si/training_dataset_varying_alat
-examples/SW_MoS2/original_configs
-
 # Result folders
 # IPs
 examples/SW_Si/alat_small_range/results/*/
@@ -194,19 +187,18 @@ examples/SW_MoS2/results/*/
 examples/PWS/IEEE14/FIMs
 examples/PWS/IEEE39/FIMs
 # ORCA
-examples/ORCA/data/transmission_loss/
-examples/ORCA/data/FIMs/environment
-examples/ORCA/data/FIMs/source
 examples/ORCA/results/*/
 
 # Large files
-examples/ORCA/data/transmission_loss*
-examples/ORCA/data/FIMS/fim_environment.tar.gz
-examples/ORCA/data/FIMS/fim_source.tar.gz
-examples/ORCA/data/FIMS/environment
-examples/ORCA/data/FIMS/source
-examples/SW_MoS2/sw_mos2_training_dataset*
-examples/SW_Si/sw_si_training_dataset*
+*.tar.gz
+examples/dataset
+
+# Extracted data
+examples/ORCA/data/transmission_loss
+examples/ORCA/data/FIMs/environment
+examples/ORCA/data/FIMs/source
+examples/SW_MoS2/sw_mos2_training_dataset
+examples/SW_Si/sw_si_training_dataset
 
 # Slurm jobscript
 submit_job.sh
@@ -215,6 +207,3 @@ slurm*
 
 # Archived results
 archive
-
-# Unpublished work
-theory
