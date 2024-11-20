@@ -247,7 +247,7 @@ while step < maxsteps:
         with open(cvx_file, "rb") as f:
             cvxopt.result = pickle.load(f)
     else:
-        cvxopt.solve(solver=solver)
+        cvxopt.solve(**solver)
         if "optimal" in cvxopt.result["status"]:
             with open(cvx_file, "wb+") as f:
                 pickle.dump(cvxopt.result, f, protocol=4)
@@ -262,7 +262,7 @@ while step < maxsteps:
     # the optimal weights
     print("Interpret the convex optimization result")
     # Get the nonzero weights from convex optimization result
-    current_weights = cvxopt.get_config_weights(cvx_tol)
+    current_weights = cvxopt.get_config_weights(cvx_tol, cvx_tol)
     # Update the optimal weights
     # We will also store the weights from previous iteration to use for convergence test
     if step >= warmup:

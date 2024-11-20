@@ -13,8 +13,10 @@ fim_target_weighted = {"fim": fim_target, "scale": 1 / 3}
 # Configurations
 fim_config_1 = np.eye(3)
 fim_config_2 = np.diag(np.zeros(3))
+fim_config_3 = np.diag([1, 2, 3])
 fim_configs = {"1": fim_config_1, "2": fim_config_2}
 fim_configs_weighted = {"1": {"fim": fim_config_1, "fim_scale": 3}, "2": fim_config_2}
+fim_configs_extended = {"1": fim_config_1, "2": fim_config_2, "3": fim_config_3}
 
 # Solve
 cvxopt = ConvexOpt(fim_target, fim_configs)
@@ -48,7 +50,7 @@ def test_result_keys():
 
 
 def test_optimal_result():
-    opt_config = cvxopt.get_config_weights(1e-6)
+    opt_config = cvxopt.get_config_weights(1e-6, 1e-6)
     # For this simple case, we know which configuration is optimal and its optimal weight
     assert list(opt_config)[0] == "1", "Wrong optimal config"
     assert np.isclose(
@@ -56,8 +58,20 @@ def test_optimal_result():
     ), "Wrong optimal weight"
 
 
+def test_weight_upper_bound():
+    w_ub = 3  # Upper bound for the optimal weights
+    cvxopt = ConvexOpt(fim_target, fim_configs_extended, weight_upper_bound=w_ub)
+    cvxopt.solve()
+    opt_config = cvxopt.get_config_weights(1e-6, 1e-6)
+    # This optimization should be successful, and the weights should be lower than the
+    # upper bound
+    for val in opt_config.values():
+        assert val <= w_ub, "Optimal weight exceeds upper bound"
+
+
 if __name__ == "__main__":
     test_default_scale()
     test_scaling()
     test_result_keys()
     test_optimal_result()
+    test_weight_upper_bound()

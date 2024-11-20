@@ -10,7 +10,7 @@ import cvxpy as cp
 from .utils import eps
 
 
-default_solver = dict(solver=cp.SDPA)
+default_kwargs = dict(solver=cp.SDPA)
 
 
 class ConvexOpt:
@@ -38,6 +38,10 @@ class ConvexOpt:
         The keywords ``fim_scale`` and ``weight_scale`` specify the multiplicative factor
         for the FIM and weight, respectively, to precondition the FIM and the weights to
         help with the optimization. These numbers are optional, with default value of 1.0.
+    weight_upper_bound: float or np.ndarray
+        The allowed upper bound for the optimal weights. This can be a single value,
+        which will be broadcasted to all configurations, or a list of values for each
+        configuration.
     l1norm_obj: bool
         An option to explicitly use l1-norm for the objective function instead of just a
         sum. In theory, these are the same, given the non-negative constraint on the
@@ -50,13 +54,10 @@ class ConvexOpt:
     Computationally, this is still the same as the original formulation.
     """
 
-    def __init__(self, fim_qoi, fim_configs, l1norm_obj=False):
+    def __init__(self, fim_qoi, fim_configs, weight_upper_bound=None, l1norm_obj=False):
         # Obtain the target FIM of the QoI
-        (
-            self.fim_qoi_vec,
-            self.scale_qoi,
-            self._fim_shape,
-        ) = self._get_target_fim_and_scale(fim_qoi)
+        self._fim_shape = self._get_fim_shape(fim_qoi)
+        self.fim_qoi_vec, self.scale_qoi = self._get_target_fim_and_scale(fim_qoi)
 
         # Obtain the configuration FIMs
         self.config_ids = self._get_config_ids(fim_configs)
@@ -66,6 +67,10 @@ class ConvexOpt:
         )
         # Get the scaling factor for the weights
         self.scale_weights = self._get_weight_scale(fim_configs)
+        # Scale the upper bound for the weights
+        self._weight_upper_bound = self._compute_scaled_weight_upper_bound(
+            weight_upper_bound
+        )
 
         # Other settings
         self._l1norm_obj = l1norm_obj
@@ -74,18 +79,18 @@ class ConvexOpt:
         self._construct_problem()
         self._result = None  # To initialize the result property
 
-    def solve(self, solver=default_solver):
+    def solve(self, **kwargs):
         """Solve the convex optimization problem.
 
         Parameters
         ----------
-        solver: dict
-            The dictionary containing the information of the solver that will
-            be passed into ``cp.Problem().solve()``. The dictionary should
-            contain the name of the solver and other keyword arguments for the
-            solver. Default: ``{"solver"=cp.SDPA}``
+        kwargs: dict
+            Additional keyword arguments to be passed into ``cp.Problem().solve()``.
+            Default: ``{"solver"=cp.SDPA}``
         """
-        self.problem.solve(**solver)
+        if kwargs == {} or kwargs is None:
+            kwargs = default_kwargs
+        self.problem.solve(**kwargs)
 
         # Store the result
         status = self.problem.status
@@ -132,15 +137,21 @@ class ConvexOpt:
         self._result = value
         self.wm.value = self._result["wm"].reshape((-1, 1))
 
-    def get_config_weights(self, zero_tol=1e-4):
+    def get_config_weights(self, zero_tol=1e-4, zero_tol_dual=1e-4):
         """Get the non-zero weights from the current convex optimization result.
 
         Parameters
         ----------
         zero_tol: float
-            Tolerance for the zero weights. This value will be compared to the
-            dual values of the weights. This is typically set to be the same
-            as the tolerance in the convex optimization solver.
+            Tolerance for the zero weights. The weight value below this tolerance is
+            treated as zero. This is typically set to be the same as the tolerance in
+            the convex optimization solver.
+
+        zero_tol: float
+            Tolerance for the zero weights using the dual values of the weights for the
+            positivity constraint. If the dual value is smaller than this tolerance,
+            the weight is treated as zero. This is typically set to be the same as the
+            tolerance in the convex optimization solver.
 
         Returns
         -------
@@ -150,8 +161,21 @@ class ConvexOpt:
         """
         # Interpret the convex optimization result and get index of non-zero
         # weights.
-        idx_nonzero_wm = self._get_idx_nonzero_wm(zero_tol)
+        idx_nonzero_wm = self._get_idx_nonzero_wm(zero_tol, zero_tol_dual)
         return self._get_config_weights_from_idx(idx_nonzero_wm)
+
+    @staticmethod
+    def _get_fim_shape(fim_qoi):
+        """Get the shape of the FIM."""
+        if isinstance(fim_qoi, np.ndarray):
+            # The argument is given as an array, so we don't need to do anything to get
+            # the matrix. But, we need to set the scale
+            fim_qoi_array = fim_qoi
+        elif isinstance(fim_qoi, dict):
+            fim_qoi_array = fim_qoi["fim"]
+        else:
+            raise ValueError("Unknown format, input dict(fim=..., scale=...)")
+        return fim_qoi_array.shape
 
     @staticmethod
     def _get_target_fim_and_scale(fim_qoi):
@@ -174,11 +198,10 @@ class ConvexOpt:
             raise ValueError("Unknown format, input dict(fim=..., scale=...)")
 
         # First, we will actually use the flatten FIM
-        shape = fim_qoi_array.shape  # Just store this value for future use
         fim_qoi_vec = fim_qoi_array.flatten()
         # Apply the scaling preconditioning to the target FIM
         fim_qoi_vec *= scale
-        return fim_qoi_vec, scale, shape
+        return fim_qoi_vec, scale
 
     @staticmethod
     def _get_config_ids(fim_configs):
@@ -238,6 +261,32 @@ class ConvexOpt:
                 )
         return scale_weights
 
+    def _compute_scaled_weight_upper_bound(self, weight_upper_bound):
+        """Compute the scaled weight upper bound, so that it won't be affected with the
+        choice of FIM scaling factors.
+        """
+        if weight_upper_bound in [None, np.inf, "inf"]:
+            return None
+        else:
+            if np.isscalar(weight_upper_bound):
+                # If a scalar is given, broadcast it to all configurations
+                weight_upper_bound = weight_upper_bound * np.ones(self.nconfigs)
+            else:
+                # If a list is given, check if the length is correct
+                if len(weight_upper_bound) != self.nconfigs:
+                    raise ValueError(
+                        "The length of weight_upper_bound should be the same as the "
+                        "number of configurations"
+                    )
+            # If the length is correct, convert it to an array
+            weight_upper_bound = np.array(weight_upper_bound)
+
+            # Scale the upper bounds
+            scaled_weight_upper_bound = (
+                weight_upper_bound * self.scale_qoi / self.scale_conf
+            )
+            return scaled_weight_upper_bound.reshape((-1, 1))
+
     def _construct_problem(self):
         """Formulate the convex optimization problem."""
         # Variable to optimize
@@ -249,6 +298,9 @@ class ConvexOpt:
         # needed by the target, imposing positive definiteness on the difference
         # between the 2 FIMs.
         self.constraints = [self.wm >= 0.0, self._difference_matrix(self.wm) >> 0]
+        # Add an upper bound on the weights
+        if self._weight_upper_bound is not None:
+            self.constraints.append(self.wm <= self._weight_upper_bound)
         # Problem
         self.problem = cp.Problem(self.objective, self.constraints)
 
@@ -316,15 +368,21 @@ class ConvexOpt:
 
         return weight_dict
 
-    def _get_idx_nonzero_wm(self, zero_tol):
+    def _get_idx_nonzero_wm(self, zero_tol, zero_tol_dual):
         """Get index of non-zero weights from the output of convex optimization.
 
         Parameters
         ----------
         zero_tol: float
-            Tolerance for the zero weights. This value will be compared to the
-            dual values of the weights. This is typically set to be the same
-            as the tolerance in the convex optimization solver.
+            Tolerance for the zero weights. The weight value below this tolerance is
+            treated as zero. This is typically set to be the same as the tolerance in
+            the convex optimization solver.
+
+        zero_tol: float
+            Tolerance for the zero weights using the dual values of the weights for the
+            positivity constraint. If the dual value is smaller than this tolerance,
+            the weight is treated as zero. This is typically set to be the same as the
+            tolerance in the convex optimization solver.
 
         Returns
         -------
@@ -338,7 +396,7 @@ class ConvexOpt:
         dual_weights = self.result["dual_wm"]
         # Get non-zero weights
         idx_nonzero_from_val = np.where(unscaled_weights > zero_tol)[0]
-        idx_nonzero_from_dual = np.where(dual_weights < zero_tol)[0]
+        idx_nonzero_from_dual = np.where(dual_weights < zero_tol_dual)[0]
         idx_nonzero_wm = list(
             set(idx_nonzero_from_val).intersection(idx_nonzero_from_dual)
         )

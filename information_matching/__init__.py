@@ -4,4 +4,8 @@ from . import termination
 from . import summary
 from . import utils
 
-__version__ = "1.0.0"
+from .convex_optimization import ConvexOpt
+
+__all__ = ["ConvexOpt"]
+
+__version__ = "1.1.0"
