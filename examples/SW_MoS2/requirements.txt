@@ -7,3 +7,4 @@ geodesicLM
 kim_python_utils @ git+https://github.com/openkim/kim-python-utils
 emcee
 ptemcee @ git+https://github.com/yonatank93/ptemcee.git@enhance_v1.0.0
+corner
