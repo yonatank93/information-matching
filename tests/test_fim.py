@@ -1,9 +1,8 @@
 import pytest
 import numpy as np
 
-from information_matching.fim import FIM_fd
-from information_matching.fim import FIM_nd
-from information_matching.fim.fim_fd import CD
+from information_matching.fim.finitediff import FiniteDifference
+from information_matching.fim import FIM_fd, FIM_nd
 
 # try:
 #     from information_matching.fim.fim_jl import FIM_jl
@@ -33,6 +32,20 @@ fim_truth = jac_truth.T @ jac_truth
 # The following is the analytic derivative for the function with kwargs
 jac_kwargs_truth = np.array([tlist * np.exp(x * tlist) for x in xlist]).T
 fim_kwargs_truth = jac_kwargs_truth.T @ jac_kwargs_truth
+
+
+def test_finitediff():
+    # Derivative setup
+    FD = FiniteDifference(xlist)
+    params_set = FD.generate_params_set()
+    # Generate predictions set
+    predictions_set = {}
+    for param_key, values in params_set.items():
+        predictions_set.update({param_key: fn(values)})
+    # Estimate derivative
+    jac = FD.estimate_derivative(predictions_set)
+    # Compare with analytical derivative
+    assert np.all(np.diag(jac - jac_truth) / np.diag(jac_truth) < 0.1)
 
 
 def test_evaluation_fd():
@@ -72,7 +85,7 @@ def test_evaluation_nd():
 
 def test_kwargs_fd():
     h = 0.01
-    fim_fn = FIM_fd(fn_kwargs, deriv_fn=CD, h=h)
+    fim_fn = FIM_fd(fn_kwargs, method="CD", h=h, nprocs=2)
     # Test for exception if function kwargs is not given
     with pytest.raises(TypeError):
         _ = fim_fn.Jacobian(xlist)
@@ -116,6 +129,7 @@ def test_kwargs_nd():
 
 
 if __name__ == "__main__":
+    test_finitediff()
     test_evaluation_fd()
     test_evaluation_nd()
     # test_evaluation_jl()
