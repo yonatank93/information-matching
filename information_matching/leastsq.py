@@ -166,7 +166,7 @@ def compare_opt_results(opt_results):
             cost = res
         else:  # This result comes from methods that use residual
             cost = np.sum(res**2) / 2
-        min_cost_list = np.row_stack((min_cost_list, [key, cost]))
+        min_cost_list = np.vstack((min_cost_list, [key, cost]))
 
     # Find the best result
     idx = np.nanargmin(min_cost_list[:, 1])  # Index that we want
