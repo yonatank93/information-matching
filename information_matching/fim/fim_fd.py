@@ -1,42 +1,8 @@
+from concurrent.futures import ThreadPoolExecutor as Pool
 import numpy as np
 
 from .fim_base import FIMBase
-
-
-# Forward Difference Formulas
-def FD(f, x, v, h):
-    return (f(x + h * v) - f(x)) / h
-
-
-def FD2(f, x, v, h):
-    return (-f(x + 2 * h * v) + 4 * f(x + h * v) - 3 * f(x)) / (2 * h)
-
-
-def FD3(f, x, v, h):
-    return (f(x + 4 * h * v) - 12 * f(x + 2 * h * v) + 32 * f(x + h * v) - 21 * f(x)) / (
-        12 * h
-    )
-
-
-def FD4(f, x, v, h):
-    return (
-        -f(x + 8 * h * v)
-        + 28 * f(x + 4 * h * v)
-        - 224 * f(x + 2 * h * v)
-        + 512 * f(x + h * v)
-        - 315 * f(x)
-    ) / (168 * h)
-
-
-# Center Difference Formulas
-def CD(f, x, v, h):
-    return (f(x + h * v) - f(x - h * v)) / (2 * h)
-
-
-def CD4(f, x, v, h):
-    return (
-        -f(x + 2 * h * v) + 8 * f(x + h * v) - 8 * f(x - h * v) + f(x - 2 * h * v)
-    ) / (12 * h)
+from .finitediff import FiniteDifference, avail_method
 
 
 class FIM_fd(FIMBase):
@@ -51,18 +17,23 @@ class FIM_fd(FIMBase):
         model to what ever parameterization we want to use.
     inverse_transform: callable ``inverse_transform(x)``
         This is the inverse of transformation function above.
-    deriv_fn: callable ``deriv_fn(f, x, v, h)``
-        A function to do finite difference derivative where f is the function to take the
-        derivative, x is the vector of parameters to evaluate the derivative, v is the
-        direction to take the derivative, and h is the step size.
+    method: str
+        A string that indicates the finite difference method to use in the derivative
+        estimation, the available methods are: "FD", "FD2", "FD3", "FD4", "CD", "CD4".
     h: float or list (nparams,)
         Step size to use in the finite difference derivative.
+    nprocs: int
+        Number of parallel processes to use in the Jacobian computation. Parallelization
+        utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
-    def __init__(self, model, transform=None, inverse_transform=None, deriv_fn=FD, h=0.1):
+    def __init__(
+        self, model, transform=None, inverse_transform=None, method="FD", h=0.1, nprocs=1
+    ):
         super().__init__(model, transform, inverse_transform)
-        self._deriv_fn = deriv_fn
+        self._method = method
         self._h = h
+        self._nprocs = nprocs
 
     def _model_args_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
@@ -103,15 +74,20 @@ class FIM_fd(FIMBase):
             assert len(h) == nparams, "Please specify one step size for each parameter."
             h = self._h
 
-        # Now, create a list of v vectors. This should just be the column of an identity
-        # matrix, since we want to perturb the parameters one at a time for each column
-        # of the Jacobian.
-        vs = np.eye(nparams)
+        # Instantiate FiniteDifference class
+        finitediff = FiniteDifference(params, h, method=self._method)
+        # Generate perturbed parameters set that we use in derivative estimation
+        params_set = finitediff.generate_params_set()
+        # Iterate over this parameter set and evaluate the model
+        if self._nprocs == 1:  # Just in case if the function is not picklable
+            results_list = [fn(p) for p in params_set.values()]
+        else:
+            with Pool(self._nprocs) as p:
+                results_list = p.map(fn, params_set.values())
+        # Convert the results list to dictionary that can be input to
+        # finitediff.estimate_derivative
+        predictions_set = {key: preds for key, preds in zip(params_set, results_list)}
+        # Estimate the derivative
+        Jacobian = finitediff.estimate_derivative(predictions_set)
 
-        # Compute the Jacobian
-        def jac_column_wrapper(ii):
-            return self._deriv_fn(fn, x, vs[ii], h[ii])
-
-        # Note: There is a possiblility to parallelize this part in the future
-        Jacobian_T = np.array(list(map(jac_column_wrapper, range(nparams))))
-        return Jacobian_T.T
+        return Jacobian

@@ -1,9 +1,6 @@
 numpy
 scipy
-tqdm
 numdifftools
-jinja2
 cvxpy
 sdpa-python
-scs
 wget
