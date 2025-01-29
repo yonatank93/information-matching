@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor as Pool
 import numpy as np
 
 from .fim_base import FIMBase
@@ -23,7 +23,8 @@ class FIM_fd(FIMBase):
     h: float or list (nparams,)
         Step size to use in the finite difference derivative.
     nprocs: int
-        Number of parallel processes to use in the Jacobian computation.
+        Number of parallel processes to use in the Jacobian computation. Parallelization
+        utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
     def __init__(
