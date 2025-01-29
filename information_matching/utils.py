@@ -4,22 +4,14 @@
 * Copy function to copy the indicator configurations.
 """
 
-
 from pathlib import Path
 import shutil
 import wget
 import tarfile
 
-import numpy as np
-
 PARENT_DIR = Path(__file__).absolute().parents[1]
 EXAMPLES_DIR = PARENT_DIR / "examples"
 DATASET_DIR = EXAMPLES_DIR / "dataset"
-
-# Tolerances in the calculation
-eps = np.finfo(float).eps
-tol = eps**0.5
-
 
 # Information that will be used to extract and place the dataset in the correct folder
 dataset_url = "https://figshare.com/ndownloader/files/49910310"
@@ -52,9 +44,7 @@ avail_dataset = list(dataset_info)  # Available dataset names
 
 def set_directory(path):
     """Set the directory and create it if it doesn't exist."""
-    if not path.exists():
-        path.mkdir(parents=True)
-
+    path.mkdir(parents=True, exist_ok=True)
     return path
 
 
@@ -63,8 +53,7 @@ def set_file(filepath):
     exist.
     """
     parent = filepath.parent
-    if not parent.exists():
-        parent.mkdir(parents=True)
+    parent.mkdir(parents=True, exist_ok=True)
     return filepath
 
 
@@ -116,7 +105,7 @@ def _download_one_dataset(dataset_name):
         if not DATASET_DIR.exists():
             # Check if the tar.gz file is already downloaded
             dataset_tarfile = (
-                EXAMPLES_DIR / f"information_matching_examples_dataset.tar.gz"
+                EXAMPLES_DIR / "information_matching_examples_dataset.tar.gz"
             )
             if not dataset_tarfile.exists():
                 # Download the dataset

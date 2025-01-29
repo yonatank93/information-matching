@@ -7,10 +7,8 @@ from copy import deepcopy
 import numpy as np
 import cvxpy as cp
 
-from .utils import eps
-
-
 default_kwargs = dict(solver=cp.SDPA)
+eps = np.finfo(float).eps
 
 
 class ConvexOpt:
