@@ -1,5 +1,6 @@
 from . import convex_optimization
 from . import leastsq
+from . import fim
 from . import termination
 from . import summary
 from . import utils
