@@ -40,8 +40,9 @@ def preconditioning(fim, scale_type, pad=0.0):
         )
 
     if isinstance(fim, np.ndarray):
-        # This should implies that the FIM is for target property.
-        scale = 1 / np.linalg.norm(fim)
+        # This implies that the FIM is for target property.
+        if scale_type.lower() in ["frobenius", "max_frobenius"]:
+            scale = 1 / np.linalg.norm(fim)
         return {"fim": fim, "fim_scale": scale}
     elif isinstance(fim, dict):
         if "fim" in fim:
