@@ -15,20 +15,14 @@ import pickle
 import copy
 
 import numpy as np
-import cvxpy as cp
 
 from information_matching.fim import FIM_nd
 from information_matching.parallel import NonDaemonicPool as Pool
 from information_matching.convex_optimization import ConvexOpt, compare_weights
+from information_matching.preconditioning import preconditioning
 from information_matching.leastsq import leastsq, compare_opt_results
 from information_matching.summary import Summary
-from information_matching.utils import (
-    eps,
-    tol,
-    set_directory,
-    set_file,
-    copy_configurations,
-)
+from information_matching.utils import set_directory, set_file, copy_configurations
 from information_matching.termination import check_convergence
 
 # This directory, i.e., working directory
@@ -67,6 +61,8 @@ kim_best_fit = model_target.best_fit
 RES_DIR = set_directory(WORK_DIR / "results" / prefix)
 
 # Tolerances
+eps = np.finfo(float).eps
+tol = eps**0.5
 cvx_tol = tol**0.75  # Convex optimization
 lstsq_tol = eps**0.75  # Least-squares training
 converge_tol = cvx_tol**0.5  # Tolerance on the weights to converge
@@ -216,15 +212,12 @@ while step < maxsteps:
 
     # Construct the input FIMs
     # FIM target
-    norm = np.linalg.norm(fim_target)
-    fim_target = {"fim": fim_target, "scale": 1 / norm}
+    fim_target = preconditioning(fim_target, "frobenius")
     # FIM configs
-    fim_configs = {}
-    for ii, identifier in enumerate(Configs.ids):
-        norm = np.linalg.norm(fim_configs_tensor[ii])
-        fim_configs.update(
-            {identifier: {"fim": fim_configs_tensor[ii], "fim_scale": 1 / norm}}
-        )
+    fim_configs = preconditioning(
+        {identifier: fim_configs_tensor[ii] for ii, identifier in enumerate(Configs.ids)},
+        "frobenius",
+    )
 
     # Instantiate convex optimization class
     cvxopt = ConvexOpt(fim_target, fim_configs)
@@ -232,7 +225,7 @@ while step < maxsteps:
     # Solve
     solver = dict(
         verbose=True,
-        solver=cp.SDPA,
+        solver="SDPA",
         maxIteration=100_000,
         epsilonStar=cvx_tol,
         numThreads=nprocs,
