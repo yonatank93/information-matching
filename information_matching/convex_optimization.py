@@ -188,10 +188,10 @@ class ConvexOpt:
             scale = 1.0
         elif isinstance(fim_qoi, dict):
             fim_qoi_array = fim_qoi["fim"]
-            if "scale" not in fim_qoi:
+            if "fim_scale" not in fim_qoi:
                 scale = 1.0
             else:
-                scale = fim_qoi["scale"]
+                scale = fim_qoi["fim_scale"]
         else:
             raise ValueError("Unknown format, input dict(fim=..., scale=...)")
 
