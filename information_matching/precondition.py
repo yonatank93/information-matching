@@ -12,7 +12,7 @@ import numpy as np
 avail_scale_type = ["frobenius", "max_frobenius"]
 
 
-def preconditioning(fim, scale_type, pad=0.0):
+def preconditioner(fim, scale_type, pad=0.0):
     """Precondition the FIMs prior to running information-matching calculation.
 
     Parameters

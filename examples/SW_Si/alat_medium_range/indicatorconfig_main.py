@@ -19,7 +19,7 @@ import numpy as np
 from information_matching.fim import FIM_nd
 from information_matching.parallel import NonDaemonicPool as Pool
 from information_matching.convex_optimization import ConvexOpt, compare_weights
-from information_matching.preconditioning import preconditioning
+from information_matching.precondition import preconditioner
 from information_matching.leastsq import leastsq, compare_opt_results
 from information_matching.utils import (
     set_directory,
@@ -221,9 +221,9 @@ while step < maxsteps:
 
     # Construct the input FIMs
     # FIM target
-    fim_target = preconditioning(fim_target, "frobenius")
+    fim_target = preconditioner(fim_target, "frobenius")
     # FIM configs
-    fim_configs = preconditioning(
+    fim_configs = preconditioner(
         {identifier: fim_configs_tensor[ii] for ii, identifier in enumerate(Configs.ids)},
         "frobenius",
     )

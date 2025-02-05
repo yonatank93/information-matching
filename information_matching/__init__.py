@@ -1,7 +1,7 @@
 from . import convex_optimization
 from . import leastsq
 from . import fim
-from . import preconditioning
+from . import precondition
 from . import transform
 from . import utils
 
