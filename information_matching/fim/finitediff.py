@@ -1,5 +1,4 @@
 import re
-from typing import Optional, Union
 import numpy as np
 
 # Dictionary containing information used for finite difference calculation.
@@ -45,18 +44,17 @@ avail_method = list(finitediff_info)
 
 
 class FiniteDifference:
-    """
-    Estimate the derivative of a model with respect to the parameters via
-    finite difference numerical derivative.
+    """Estimate the derivative of a model with respect to the parameters via finite
+    difference numerical derivative.
 
-    What this module does is 1) generate a set of perturbed parameters that
-    will need to be evaluated and 2) use the model outputs evaluated at this
-    set of parameters and estimate the derivative of the model.
-    Note that this means the model needs to be evaluated outside of this class,
-    and this class will use the predictions information to estimate the
-    derivative.
+    What this module does is 1) generate a set of perturbed parameters that will need to
+    be evaluated and 2) use the model outputs evaluated at this set of parameters and
+    estimate the derivative of the model. Note that this means the model needs to be
+    evaluated outside of this class, and this class will use the predictions information
+    to estimate the derivative.
 
     Currently, the available methods are:
+
     * "FD" - forward difference
     * "FD2" - 2-point forward difference
     * "FD3" - 3-point forward difference
@@ -64,69 +62,62 @@ class FiniteDifference:
     * "CD" - central difference
     * "CD$" - 4-point central difference
 
-    When generating the parameter set, the parameter values will be given as a
-    dictionary with the following format (assuming we have a model with 2
-    parameters and use central difference (CD) method):
+    When generating the parameter set, the parameter values will be given as a dictionary
+    with the following format (assuming we have a model with 2 parameters and use central
+    difference (CD) method):
 
-    params_set = {
-        "original": <original_parameter_values>,
-        "param0-plus1h": <param>,
-        "param0-minus1h": <param>,
-        "param1-plus1h": <param>,
-        "param1-minus1h": <param>,
-    }
+        params_set = {
+            "original": <original_parameter_values>,
+            "param0-plus1h": <param>,
+            "param0-minus1h": <param>,
+            "param1-plus1h": <param>,
+            "param1-minus1h": <param>,
+        }
 
-    Then, when estimating the derivative from the predictions set, the
-    predictions should be given as a dictionary in the following format (also
-    assuming a model with 2 parameters and using CD method):
+    Then, when estimating the derivative from the predictions set, the predictions should
+    be given as a dictionary in the following format (also assuming a model with 2
+    parameters and using CD method):
 
-    predictions_set = {
-        "original": <predictions_at_original_param>,
-        "param0-plus1h": <preds>,
-        "param0-minus1h": <preds>,
-        "param1-plus1h": <preds>,
-        "param0-minus1h": <preds>,
-    }
+        predictions_set = {
+            "original": <predictions_at_original_param>,
+            "param0-plus1h": <preds>,
+            "param0-minus1h": <preds>,
+            "param1-plus1h": <preds>,
+            "param0-minus1h": <preds>,
+        }
 
-    Notes: The central difference formulae should not need predictions
-    computation at the unperturbed parameters. However, we still require that
-    key to make the interface uniform across different methods. One can just
-    set the this predictions to a random array, but with the same length as the
-    length of the predictions vector.
+    Notes
+    -----
+    The central difference formulae should not need predictions computation at the
+    unperturbed parameters. However, we still require that key to make the interface
+    uniform across different methods. One can just set the this predictions to a random
+    array, but with the same length as the length of the predictions vector.
 
-    :param params: Parameter values in which we want to estimate the
-        derivative at.
-    :type params: np.ndarray
-
-    :param h: Finite difference step size. Can be a single number for all
-        parameters or a list of numbers, each for different parameters.
-    :type h: float or list
-
-    :param method: A string that identifies the finite difference method.
-        Needs to be one of the available methods.
-    :type method: str
+    Parameters
+    ----------
+    params : np.ndarray
+        Parameter values in which we want to estimate the derivative at.
+    h : float or list
+        Finite difference step size. Can be a single number for all parameters or a list
+        of numbers, each for different parameters.
+    method : str
+        A string that identifies the finite difference method. Needs to be one of the
+        available methods.
     """
 
-    def __init__(
-        self,
-        params: np.ndarray,
-        h: Optional[Union[float, list, np.ndarray]] = 0.1,
-        method: Optional[str] = "FD",
-    ):
-        """
-        Instantiate class to estimate derivative via finite difference.
+    def __init__(self, params, h=0.1, method="FD"):
+        """Instantiate class to estimate derivative via finite difference.
 
-        :param params: Parameter values at which we want to estimate the
-            derivative.
-        :type params: np.ndarray
-
-        :param h: Finite difference step size. Can be a single number for all
-            parameters or a list of numbers, each for different parameters.
-        :type h: float or list
-
-        :param method: A string that identifies the finite difference method.
-            Needs to be one of the available methods.
-        :type method: str
+        Parameters
+        ----------
+        params : np.ndarray
+            Parameter values in which we want to estimate the derivative at.
+        h : float or list
+            Finite difference step size. Can be a single number for all parameters or a
+            list of numbers, each for different parameters.
+        method : str
+            A string that identifies the finite difference method. Needs to be one of the
+            available methods.
         """
         self.params = params
         self.nparams = len(self.params)
@@ -150,12 +141,22 @@ class FiniteDifference:
         self._fd_info = finitediff_info[self.method]
 
     def generate_params_set(self) -> dict:
-        """
-        Generate a set of parameter values that will be use to estimate the
-        derivative.
+        """Generate a set of parameter values that will be use to estimate the derivative.
 
-        :returns: Parameters set
-        :rtype: dict
+        The format of the generated set will look like:
+
+            params_set = {
+                "original": <original_parameter_values>,
+                "param0-plus1h": <param>,
+                "param0-minus1h": <param>,
+                "param1-plus1h": <param>,
+                "param0-minus1h": <param>,
+            }
+
+        Returns
+        -------
+        dict
+            Parameters set
         """
 
         params_set = {"original": self.params}
@@ -172,25 +173,28 @@ class FiniteDifference:
         return params_set
 
     def estimate_derivative(self, preds_set: dict) -> np.ndarray:
-        """
-        Estimate the derivative given the set of predictions evaluated at the
+        """Estimate the derivative given the set of predictions evaluated at the
         generated set of parameters.
 
         The format of ``preds_set`` needs to look like:
-        predictions_set = {
-            "original": <predictions_at_original_param>,
-            "param0-plus1h": <preds>,
-            "param0-minus1h": <preds>,
-            "param1-plus1h": <preds>,
-            "param0-minus1h": <preds>,
-        }
 
+            predictions_set = {
+                "original": <predictions_at_original_param>,
+                "param0-plus1h": <preds>,
+                "param0-minus1h": <preds>,
+                "param1-plus1h": <preds>,
+                "param0-minus1h": <preds>,
+            }
 
-        :param preds_set: A set of predictions
-        :type preds: dict
+        Parameters
+        ----------
+        preds_set : dict
+            A set of predictions
 
-        :returns: array (npreds, nparams,)
-        :rtype: np.ndarray
+        Returns
+        -------
+        np.ndarray
+            Array with the estimated derivative
         """
         # Retrieve predictions at the unperturbed parameters
         center = self._fd_info["scale"][0] * preds_set["original"]
