@@ -1,7 +1,11 @@
 """Unit tests for the Transform module for parameter transformation."""
 
 import numpy as np
-from information_matching.transform import AffineTransform, LogTransform
+from information_matching.transform import (
+    AffineTransform,
+    LogTransform,
+    CombinedTransform,
+)
 
 np.random.seed(1)
 
@@ -17,6 +21,12 @@ transform_affine = AffineTransform(A, b)
 sign = np.sign(x)
 transform_log = LogTransform(sign)
 
+# Instantiate the Combined parameter transform
+transforms = [transform_affine, transform_log]
+xlong = np.append(x, x)
+param_idx = [range(len(x)), range(len(x), 2 * len(x))]
+transform_combined = CombinedTransform(transforms, param_idx)
+
 
 def test_transform():
     """Test forward transformation method."""
@@ -24,6 +34,8 @@ def test_transform():
     assert np.allclose(transform_affine(x), A @ x + b)
     # Test log transformation by manual calculation
     assert np.allclose(transform_log(x), np.log(np.abs(x)))
+    # Test combined transformation by manual calculation
+    assert np.allclose(transform_combined(xlong), np.append(A @ x + b, np.log(np.abs(x))))
 
 
 def test_inverse_transform():
@@ -32,6 +44,10 @@ def test_inverse_transform():
     assert np.allclose(transform_affine.inverse_transform(transform_affine(x)), x)
     # Test if log inverse transformation gives back the original parameter values
     assert np.allclose(transform_log.inverse_transform(transform_log(x)), x)
+    # Test if combined inverse transformation gives back the original parameter values
+    assert np.allclose(
+        transform_combined.inverse_transform(transform_combined(xlong)), xlong
+    )
 
 
 if __name__ == "__main__":

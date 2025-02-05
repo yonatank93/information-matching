@@ -190,4 +190,65 @@ class LogTransform(TransformBase):
         return self.sign * np.exp(x)
 
 
-avail_transform = {"affine": AffineTransform, "log": LogTransform}
+class CombinedTransform(TransformBase):
+    """A class to combine multiple transformations.
+
+    Parameters
+    ----------
+    transforms: list
+        List of transformation class instances to combine.
+
+    param_idx: list
+        A nested list of indices to specify which parameters to apply the
+        transformations. For example, the first transformation is applied to the list
+        of parameters specified by `param_idx[0]`, the second transformation is applied
+        to the list of parameters specified by `param_idx[1]`, and so on.
+    """
+
+    def __init__(self, transforms, param_idx):
+        self.transforms = transforms
+        self.param_idx = param_idx
+        super().__init__(transforms=transforms, param_idx=param_idx)
+
+    def transform(self, x):
+        """Perform parameter transformation to the transformed space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in transformed space.
+        """
+        params = []
+        for transform, idx in zip(self.transforms, self.param_idx):
+            params = np.append(params, transform.transform(x[idx]))
+        return params
+
+    def inverse_transform(self, x):
+        """Invert the transformation back to the original space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to inverse transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in the original parameterization.
+        """
+        params = []
+        for transform, idx in zip(self.transforms, self.param_idx):
+            params = np.append(params, transform.inverse_transform(x[idx]))
+        return params
+
+
+avail_transform = {
+    "affine": AffineTransform,
+    "log": LogTransform,
+    "combined": CombinedTransform,
+}
