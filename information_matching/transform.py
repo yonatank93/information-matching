@@ -4,6 +4,41 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
+def func_wrapper(func, transform):
+    """Wrapper function that evaluates the model in the transformed parameter space.
+    Basically, this function just applies inverse transformation and then calls the
+    model function.
+
+    An example use case for this function wrapper is if we want to compute the FIM by
+    taking derivative in the transformed space. This function can help with the parameter
+    conversion, and the returned function can be directly used with the modules in
+    `information_matching.fim`.
+
+    Parameters
+    ----------
+    func: callable
+        The model function to evaluate.
+    transform: TransformBase
+        The transformation class instance to use.
+
+    Returns
+    -------
+    func_orig: callable
+        The model function that evaluates the model in the transformed parameter space.
+
+    Notes
+    -----
+    The parameter input to the returned function must be in the transformed parameter
+    space.
+    """
+
+    def func_orig(x, *args, **kwargs):
+        xorig = transform.inverse_transform(x)
+        return func(xorig, *args, **kwargs)
+
+    return func_orig
+
+
 class TransformBase(ABC):
     """Abstract base class for parameter transformations."""
 

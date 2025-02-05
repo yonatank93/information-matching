@@ -2,6 +2,7 @@
 
 import numpy as np
 from information_matching.transform import (
+    func_wrapper,
     AffineTransform,
     LogTransform,
     CombinedTransform,
@@ -47,6 +48,20 @@ def test_inverse_transform():
     # Test if combined inverse transformation gives back the original parameter values
     assert np.allclose(
         transform_combined.inverse_transform(transform_combined(xlong)), xlong
+    )
+
+
+def test_func_wrapper():
+    """Test func_wrapper function."""
+
+    def test_func(x):
+        return x + 1
+
+    # Test if the wrapped function returns the expected result. If so, then test_func
+    # evaluated at x is the same as func_wrapper(test_func, transform) evaluated at
+    # transform(x).
+    assert np.allclose(
+        func_wrapper(test_func, transform_log)(transform_log(x)), test_func(x)
     )
 
 
