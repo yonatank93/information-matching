@@ -1,8 +1,8 @@
 from . import convex_optimization
 from . import leastsq
 from . import fim
-from . import termination
-from . import summary
+from . import preconditioning
+from . import transform
 from . import utils
 
 from .convex_optimization import ConvexOpt

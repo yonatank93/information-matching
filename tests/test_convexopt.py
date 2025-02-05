@@ -1,6 +1,6 @@
 import numpy as np
 
-from information_matching.convex_optimization import ConvexOpt
+from information_matching import ConvexOpt
 
 np.random.seed(1)
 

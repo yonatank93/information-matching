@@ -1,6 +1,6 @@
 import numpy as np
 
-from information_matching.termination import check_convergence
+from information_matching.utils import check_convergence
 
 np.random.seed(1)
 
