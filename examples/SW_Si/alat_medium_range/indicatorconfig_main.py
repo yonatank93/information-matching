@@ -21,9 +21,13 @@ from information_matching.parallel import NonDaemonicPool as Pool
 from information_matching.convex_optimization import ConvexOpt, compare_weights
 from information_matching.preconditioning import preconditioning
 from information_matching.leastsq import leastsq, compare_opt_results
-from information_matching.summary import Summary
-from information_matching.utils import set_directory, set_file, copy_configurations
-from information_matching.termination import check_convergence
+from information_matching.utils import (
+    set_directory,
+    set_file,
+    copy_configurations,
+    check_convergence,
+    Summary,
+)
 
 # This directory, i.e., working directory
 WORK_DIR = Path(__file__).absolute().parent
