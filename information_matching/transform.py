@@ -99,22 +99,38 @@ class TransformBase(ABC):
 
 
 class AffineTransform(TransformBase):
-    """An affine transformation class :math:`y = A.x + b`.
+    """An affine transformation class :math:`y = A(x-x0) + b`. This form of
+    transformation separates shifts in input space and output space.
+
+    Notes
+    -----
+    The class can also be used to subsample the parameters, i.e, if you want to vary only
+    a subset of parameters and keep the rest fixed. In this case, we can set the
+    transformation matrix A to be a diagonal matrix with 1's and 0's. The shift in the
+    input space x0 can be used in the inverse transformation to add the fixed parameters
+    back.
 
     Parameters
     ----------
     A: float or np.ndarray
-        2d array or a float.
+        Transformation matrix. If a float is given, the transformation is a scalar
+        multiplication. If a 1d array is given, the transformation is a matrix
+        multiplication.
+
+    x0: float or np.ndarray
+        Shift in the input space. If a float is given, the shift is a scalar addition.
+        If a 1d array is given, the shift is a vector addition.
 
     b: float or np.ndarray
-        1d array or a float.
+        Shift in the output space. If a float is given, the shift is a scalar addition.
+        If a 1d array is given, the shift is a vector addition.
 
     Ainv: None or float or np.ndarray
         Inverse of A. If None is given, inverse will be computed by taking reciprocal
         of a if a is a float, otherwise using `np.linalg.pinv(a)`.
     """
 
-    def __init__(self, a=1.0, b=0.0, ainv=None):
+    def __init__(self, a=1.0, x0=0.0, b=0.0, ainv=None):
         super().__init__(a=a, b=b, ainv=ainv)
         self.a = a
         if isinstance(self.a, (float, int)):
@@ -124,6 +140,7 @@ class AffineTransform(TransformBase):
             # Use @ multiplication operator
             self._mult_fn = self._matrix_mult
 
+        self.x0 = x0
         self.b = b
 
         if ainv is None:
@@ -149,7 +166,7 @@ class AffineTransform(TransformBase):
         np.ndarray
             Parameter values in affine transformed space.
         """
-        return self._mult_fn(self.a, x) + self.b
+        return self._mult_fn(self.a, (x - self.x0)) + self.b
 
     def inverse_transform(self, x):
         """Invert the transformation back to the original space.
@@ -164,7 +181,7 @@ class AffineTransform(TransformBase):
         np.ndarray
             Parameter values in the original parameterization.
         """
-        return self._mult_fn(self.ainv, (x - self.b))
+        return self._mult_fn(self.ainv, (x - self.b)) + self.x0
 
     @staticmethod
     def _scalar_mult(a, b):

@@ -15,8 +15,9 @@ x = np.random.randn(3)
 
 # Instantiate the Affine parameter transform
 A = np.random.randn(3, 3)
+x0 = np.random.randn(3)
 b = np.random.randn(3)
-transform_affine = AffineTransform(A, b)
+transform_affine = AffineTransform(A, x0, b)
 
 # Instantiate the Log parameter transform
 sign = np.sign(x)
@@ -32,11 +33,13 @@ transform_combined = CombinedTransform(transforms, param_idx)
 def test_transform():
     """Test forward transformation method."""
     # Test affine transformation by manual calculation
-    assert np.allclose(transform_affine(x), A @ x + b)
+    assert np.allclose(transform_affine(x), A @ (x - x0) + b)
     # Test log transformation by manual calculation
     assert np.allclose(transform_log(x), np.log(np.abs(x)))
     # Test combined transformation by manual calculation
-    assert np.allclose(transform_combined(xlong), np.append(A @ x + b, np.log(np.abs(x))))
+    assert np.allclose(
+        transform_combined(xlong), np.append(A @ (x - x0) + b, np.log(np.abs(x)))
+    )
 
 
 def test_inverse_transform():
@@ -68,3 +71,4 @@ def test_func_wrapper():
 if __name__ == "__main__":
     test_affine_transform()
     test_inverse_transform()
+    test_func_wrapper()
