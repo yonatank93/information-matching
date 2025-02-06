@@ -69,6 +69,6 @@ def test_func_wrapper():
 
 
 if __name__ == "__main__":
-    test_affine_transform()
+    test_transform()
     test_inverse_transform()
     test_func_wrapper()
