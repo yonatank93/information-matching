@@ -23,8 +23,8 @@ def cost(x):
 opt_leastsq = scopt.least_squares(residual, np.ones(3))
 opt_minimize = scopt.minimize(cost, np.ones(3))
 # Convert
-leastsq_dict = leastsq.convert_leastsq_result_format(opt_leastsq)
-minimize_dict = leastsq.convert_minimize_result_format(opt_minimize)
+leastsq_dict = leastsq._convert_leastsq_result_format(opt_leastsq)
+minimize_dict = leastsq._convert_minimize_result_format(opt_minimize)
 # Toy result
 opt_toy = np.linalg.lstsq(J, y, rcond=-1)
 toy_dict = (
