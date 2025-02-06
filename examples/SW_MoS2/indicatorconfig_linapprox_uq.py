@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from corner import corner
 
 from information_matching.fim.fim_jl import FIM_jl
-from information_matching.utils import set_directory, tol
+from information_matching.utils import set_directory
 
 from models.models import (
     ModelTraining,
@@ -35,6 +35,7 @@ from models.models import (
 
 mpl.use("qt5agg")
 np.random.seed(2022)
+tol = np.finfo(float).eps ** 0.5
 
 # This directory, i.e., working directory
 WORK_DIR = Path(__file__).absolute().parent

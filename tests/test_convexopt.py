@@ -1,6 +1,6 @@
 import numpy as np
 
-from information_matching.convex_optimization import ConvexOpt
+from information_matching import ConvexOpt
 
 np.random.seed(1)
 
@@ -9,7 +9,7 @@ np.random.seed(1)
 scale = np.random.uniform(0, 10)
 # Target
 fim_target = np.eye(3) * scale
-fim_target_weighted = {"fim": fim_target, "scale": 1 / 3}
+fim_target_weighted = {"fim": fim_target, "fim_scale": 1 / 3}
 # Configurations
 fim_config_1 = np.eye(3)
 fim_config_2 = np.diag(np.zeros(3))

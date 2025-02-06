@@ -1,6 +1,6 @@
-"""This module contains the functions that we need to perform convex optimization and the
-corresponding post-processings, such as get the non-zero weights from the convex
-optimization output.
+"""This module contains the functions that we need to perform convex optimization in the
+information-matching schema and the corresponding post-processings, such as get the
+non-zero weights from the convex optimization output.
 """
 
 from copy import deepcopy
@@ -13,7 +13,7 @@ eps = np.finfo(float).eps
 
 class ConvexOpt:
     """This class is for formulating and solving the convex optimization problem to find
-    the indicator configuration. For the notation below, :math:`N` denotes the number of
+    the information-matching. For the notation below, :math:`N` denotes the number of
     parameters and :math:`L` denotes the number of configurations.
 
     Parameters
@@ -48,8 +48,13 @@ class ConvexOpt:
 
     Notes
     -----
-    The indicator configuration calculation done here will flatten the FIMs into vectors.
-    Computationally, this is still the same as the original formulation.
+    - The information-matching calculation done here will flatten the FIMs into vectors.
+      Computationally, this is still the same as the original formulation.
+    - The weight_scale keyword in the fim_configs argument can be used to enforce a
+      sparser solution. When the weights are scaled down, the solver tends to set them to
+      zero, effectively approximating an :math:`\ell_0`-norm optimization.
+    - A motivation for setting upper bounds on the weights is if there is a limitation in
+      the feasible accuracy of reference data collection for a given configuration.
     """
 
     def __init__(self, fim_qoi, fim_configs, weight_upper_bound=None, l1norm_obj=False):
@@ -116,7 +121,7 @@ class ConvexOpt:
         Returns
         -------
         dict
-            The information we need for indicator configuration from the convex
+            The information we need for information-matching from the convex
             optimization. The keys of the dictionary are:
 
             * ``status``: status of the convex optimization.
@@ -188,10 +193,10 @@ class ConvexOpt:
             scale = 1.0
         elif isinstance(fim_qoi, dict):
             fim_qoi_array = fim_qoi["fim"]
-            if "scale" not in fim_qoi:
+            if "fim_scale" not in fim_qoi:
                 scale = 1.0
             else:
-                scale = fim_qoi["scale"]
+                scale = fim_qoi["fim_scale"]
         else:
             raise ValueError("Unknown format, input dict(fim=..., scale=...)")
 

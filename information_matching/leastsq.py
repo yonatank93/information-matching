@@ -1,7 +1,6 @@
-"""This module contains functions and classes that are needed for model training.
-For the least-squares optimization, we will use geodesiclm package. We also
-have a class weights that set the weights for KLIFF model from the weights of
-the reduced configurations.
+"""This module contains functions and classes that are needed for model training. For the
+least-squares optimization, we will use geodesiclm package. We also have a class weights
+that set the weights for KLIFF model from the weights of the reduced configurations.
 """
 
 import numpy as np
@@ -37,9 +36,13 @@ minimize_methods = [
 
 def leastsq(func, x0, method, **kwargs):
     """This is the main function that solves the least squares problem. It uses either
-    geodesicLM algorithm or scipy.optimize.least_squares function. geodesicLM is
-    efficient, but requires the number of predictions to be at least as many as the number
-    of parameters. Otherwise, use, e.g., TRF algorithm implemented in scipy.
+    ``geodesicLM`` algorithm, ``scipy.optimize.least_squares`` function, or any
+    solver in ``scipy.optimize.minimize``.
+
+    Levenberg-Marquadt-type algorithm (e.g., used in the LM algorithm implementation in
+    ``scipy.optimize.least_squares`` and ``geodesicLM``) is efficient, but requires the
+    number of predictions to be at least as many as the number of parameters. Otherwise,
+    use other optimization algorithm, such as BFGS in ``scipy.optimize.minimize``.
 
     Parameters
     ----------
@@ -66,10 +69,10 @@ def leastsq(func, x0, method, **kwargs):
             raise ImportError("Please install Geodesic-LM or choose different method")
     elif method in leastsq_methods:
         opt_result = scipy.optimize.least_squares(func, x0, **kwargs)
-        return convert_leastsq_result_format(opt_result)
+        return _convert_leastsq_result_format(opt_result)
     elif method in minimize_methods:
         opt_result = scipy.optimize.minimize(func, x0, **kwargs)
-        return convert_minimize_result_format(opt_result)
+        return _convert_minimize_result_format(opt_result)
     else:
         raise ValueError("Method not available")
 
@@ -81,7 +84,7 @@ def leastsq(func, x0, method, **kwargs):
 # "message" -> "msg", "fun" -> "fvec", "jac" -> "fjac"
 
 
-def convert_leastsq_result_format(opt_result):
+def _convert_leastsq_result_format(opt_result):
     """Convert the output of ``scipy.optimize.least_squares`` to be in the same format as
     the output of ``geodesicLM``.
 
@@ -108,7 +111,7 @@ def convert_leastsq_result_format(opt_result):
     return x, info_dict
 
 
-def convert_minimize_result_format(opt_result):
+def _convert_minimize_result_format(opt_result):
     """Convert the output of ``scipy.optimize.minimize`` to be in the same format as the
     output of ``geodesicLM``.
 

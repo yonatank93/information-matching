@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from information_matching.mcmc_utils import mser
+from information_matching.sampling_utils import mser
 
 
 argv = sys.argv

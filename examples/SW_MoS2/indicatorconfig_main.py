@@ -14,20 +14,18 @@ import pickle
 import copy
 
 import numpy as np
-import cvxpy as cp
 
 from information_matching.fim.fim_jl import FIM_jl
 from information_matching.convex_optimization import ConvexOpt, compare_weights
+from information_matching.precondition import preconditioner
 from information_matching.leastsq import leastsq, compare_opt_results
-from information_matching.summary import Summary
-from information_matching.utils import (
-    eps,
-    tol,
+from information_matching.utils.misc import (
     set_directory,
     set_file,
     copy_configurations,
+    check_convergence,
+    Summary,
 )
-from information_matching.termination import check_convergence
 
 from models.models import (
     Configs,
@@ -73,6 +71,8 @@ nparams = model_target.nparams
 RES_DIR = set_directory(WORK_DIR / "results" / suffix)
 
 # Tolerances
+eps = np.finfo(float).eps
+tol = eps**0.5
 cvx_tol = tol**0.5  # Convex optimization
 lstsq_tol = eps**0.75  # Least-squares training
 converge_tol = cvx_tol**0.5  # Tolerance on the weights to converge
@@ -192,15 +192,12 @@ while step < maxsteps:
 
     # Construct the input FIMs
     # FIM target
-    scale = 1 / np.linalg.norm(fim_target)
-    fim_target = {"fim": fim_target, "scale": scale}
+    fim_target = preconditioner(fim_target, "frobenius")
     # FIM configs
-    fim_configs = {}
-    for ii, identifier in enumerate(Configs.ids):
-        scale = 1 / np.linalg.norm(fim_configs_tensor[ii])
-        fim_configs.update(
-            {identifier: {"fim": fim_configs_tensor[ii], "fim_scale": scale}}
-        )
+    fim_configs = preconditioner(
+        {identifier: fim_configs_tensor[ii] for ii, identifier in enumerate(Configs.ids)},
+        "frobenius",
+    )
 
     # Instantiate convex optimization class
     cvxopt = ConvexOpt(fim_target, fim_configs)
@@ -208,7 +205,7 @@ while step < maxsteps:
     # Solve
     solver = dict(
         verbose=True,
-        solver=cp.SCS,
+        solver="SCS",
         max_iters=1_000_000,
         eps=cvx_tol,
         acceleration_lookback=0,
