@@ -11,6 +11,11 @@ import multiprocessing.pool
 import queue
 from multiprocessing.reduction import ForkingPickler, AbstractReducer
 
+
+#########################################################################################
+# Multiprocessing with dictionary output
+# --------------------------------------
+
 # We set to use pickle 4 in case if we need to deal with large data. However,
 # it is recommended not to deal with large data directly if possible.
 
@@ -43,13 +48,9 @@ ctx.reducer = Pickle4Reducer()
 np.random.seed(2021)
 
 
-def mymp(target, njobs, nprocesses, args=(), keys=()):
-    """My wrapper to do multiprocessing, to make my job easier so I don't need
-    to write this routine over and over when I need it. Here, I also set to use
-    pickle 4 in case if I need to deal with large data and pass it accross
-    processes. However, it is recommended not to deal with large data directly
-    if possible, instead we can load the data globally and just include the
-    index in the parallel processes.
+def MyMPPickleOutput(target, njobs, nprocesses, args=(), keys=()):
+    """A Wrapper to do multiprocessing and output the results as a dictionary instead of
+    a list. Here, we also use pickle 4 to deal with large data.
 
     Parameters
     ----------
@@ -147,6 +148,9 @@ def _target_wrapper(target, result_dict, task_to_accomplish, task_done, keys, ar
             )
 
 
+#########################################################################################
+# Multiprocessing with non-daemonic process
+# -----------------------------------------
 class NoDaemonProcess(mp.Process):
     @property
     def daemon(self):
@@ -173,13 +177,16 @@ class NonDaemonicPool(multiprocessing.pool.Pool):
         super(NonDaemonicPool, self).__init__(*args, **kwargs)
 
 
-# Custom multiprocessing pool to handle unpicklable KIM object.
+#########################################################################################
+# Custom multiprocessing pool to handle unpicklable object.
+# --------------------------------------------------------
 class MyPool(multiprocessing.pool.Pool):
     """An alternative to ``mp.Pool``.
 
     The difference is that this pool class can be used for non picklable
     functions. I inherited from ``mp.Pool``, with modification in the ``map``
-    method, which is a copy of the parallelization function in KLIFF.
+    method.
+    This class is a copy of the parallelization function in KLIFF.
 
     Notes
     -----

@@ -28,6 +28,17 @@ def preconditioner(fim, scale_type, pad=0.0):
         The padding value to add to the Frobenius nor to avoid division by zero.
         Default is 0.0.
 
+    Notes
+    -----
+    Scale type "max_frobenius" scales all FIMs uniformly, resulting in the same convex
+    optimization result as the unscaled FIMs. However, scaling down the FIMs helps
+    stabilize the optimization process by balancing their magnitudes.
+
+    Scale type "frobenius" scales each FIM by its Frobenius norm, resulting in a
+    non-uniform scaling. Unlike "max_frobenius", this affects the optimization result.
+    Users should consider this option if they want to match the **information type** of
+    each configuration with the target predictions.
+
     Returns
     -------
     dict

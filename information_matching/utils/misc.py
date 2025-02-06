@@ -2,6 +2,7 @@
 * Set file and directory that creates all the necessary directories if not
   exists.
 * Copy function to copy the indicator configurations.
+* Download function to download the dataset used in the examples.
 """
 
 from pathlib import Path
@@ -9,8 +10,8 @@ import shutil
 import wget
 import tarfile
 
-PARENT_DIR = Path(__file__).absolute().parents[1]
-EXAMPLES_DIR = PARENT_DIR / "examples"
+REPO_DIR = Path(__file__).absolute().parents[1]
+EXAMPLES_DIR = REPO_DIR / "examples"
 DATASET_DIR = EXAMPLES_DIR / "dataset"
 
 # Information that will be used to extract and place the dataset in the correct folder
