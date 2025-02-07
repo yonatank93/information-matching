@@ -5,7 +5,8 @@ from information_matching.transform import (
     func_wrapper,
     AffineTransform,
     LogTransform,
-    CombinedTransform,
+    SplitTransform,
+    ComposedTransform,
 )
 
 np.random.seed(1)
@@ -23,11 +24,14 @@ transform_affine = AffineTransform(A, x0, b)
 sign = np.sign(x)
 transform_log = LogTransform(sign)
 
-# Instantiate the Combined parameter transform
-transforms = [transform_affine, transform_log]
+# Instantiate the Split parameter transform
+transforms_list = [transform_log, transform_affine]
 xlong = np.append(x, x)
 param_idx = [range(len(x)), range(len(x), 2 * len(x))]
-transform_combined = CombinedTransform(transforms, param_idx)
+transform_split = SplitTransform(transforms_list, param_idx)
+
+# Instantiate the Composed parameter transform
+transform_composed = ComposedTransform(transforms_list)
 
 
 def test_transform():
@@ -36,9 +40,9 @@ def test_transform():
     assert np.allclose(transform_affine(x), A @ (x - x0) + b)
     # Test log transformation by manual calculation
     assert np.allclose(transform_log(x), np.log(np.abs(x)))
-    # Test combined transformation by manual calculation
+    # Test split transformation by manual calculation
     assert np.allclose(
-        transform_combined(xlong), np.append(A @ (x - x0) + b, np.log(np.abs(x)))
+        transform_split(xlong), np.append(np.log(np.abs(x)), A @ (x - x0) + b)
     )
 
 
@@ -48,10 +52,8 @@ def test_inverse_transform():
     assert np.allclose(transform_affine.inverse_transform(transform_affine(x)), x)
     # Test if log inverse transformation gives back the original parameter values
     assert np.allclose(transform_log.inverse_transform(transform_log(x)), x)
-    # Test if combined inverse transformation gives back the original parameter values
-    assert np.allclose(
-        transform_combined.inverse_transform(transform_combined(xlong)), xlong
-    )
+    # Test if split inverse transformation gives back the original parameter values
+    assert np.allclose(transform_split.inverse_transform(transform_split(xlong)), xlong)
 
 
 def test_func_wrapper():
