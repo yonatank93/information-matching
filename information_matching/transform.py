@@ -243,6 +243,59 @@ class LogTransform(TransformBase):
         return self.sign * np.exp(x)
 
 
+class AtanhTransform(TransformBase):
+    """An inverse hyperbolic tangent transformation class
+    :math:`y = atanh((x - b) / a)`.
+
+    This transformation is useful when the parameter values are bounded between two
+    values, where the midpoint is at :math:`b` and the half-range is :math:`a`.
+
+    Parameters
+    ----------
+    low: float
+        Lower bound of the parameter values.
+    high: float
+        Upper bound of the parameter values.
+    """
+
+    def __init__(self, low, high):
+        self.low = low
+        self.high = high
+        self.a = (high - low) / 2  # Half-range
+        self.b = (high + low) / 2  # Midpoint
+        super().__init__(low=self.low, high=self.high)
+
+    def transform(self, x):
+        """Perform parameter transformation to the transformed space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in arctanh transformed space.
+        """
+        return np.arctanh((x - self.b) / self.a)
+
+    def inverse_transform(self, x):
+        """Invert the transformation back to the original space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to inverse transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in the original parameterization.
+        """
+        return self.a * np.tanh(x) + self.b
+
+
 class SplitTransform(TransformBase):
     """A class that combines multiple transformations by applying each transformation
     to a subset of the parameters.
