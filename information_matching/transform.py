@@ -439,7 +439,9 @@ class ComposedTransform(TransformBase):
 
 
 avail_transform = {
-    "affine": AffineTransform,
-    "log": LogTransform,
-    "split": SplitTransform,
+    "AffineTransform": AffineTransform,
+    "LogTransform": LogTransform,
+    "AtanhTransform": AtanhTransform,
+    "SplitTransform": SplitTransform,
+    "ComposedTransform": ComposedTransform,
 }
