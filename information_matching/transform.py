@@ -1,6 +1,7 @@
 """Collection of parameter transformations."""
 
 from abc import ABC, abstractmethod
+import copy
 import numpy as np
 
 
@@ -242,8 +243,62 @@ class LogTransform(TransformBase):
         return self.sign * np.exp(x)
 
 
-class CombinedTransform(TransformBase):
-    """A class to combine multiple transformations.
+class AtanhTransform(TransformBase):
+    """An inverse hyperbolic tangent transformation class
+    :math:`y = atanh((x - b) / a)`.
+
+    This transformation is useful when the parameter values are bounded between two
+    values, where the midpoint is at :math:`b` and the half-range is :math:`a`.
+
+    Parameters
+    ----------
+    low: float
+        Lower bound of the parameter values.
+    high: float
+        Upper bound of the parameter values.
+    """
+
+    def __init__(self, low, high):
+        self.low = low
+        self.high = high
+        self.a = (high - low) / 2  # Half-range
+        self.b = (high + low) / 2  # Midpoint
+        super().__init__(low=self.low, high=self.high)
+
+    def transform(self, x):
+        """Perform parameter transformation to the transformed space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in arctanh transformed space.
+        """
+        return np.arctanh((x - self.b) / self.a)
+
+    def inverse_transform(self, x):
+        """Invert the transformation back to the original space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to inverse transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in the original parameterization.
+        """
+        return self.a * np.tanh(x) + self.b
+
+
+class SplitTransform(TransformBase):
+    """A class that combines multiple transformations by applying each transformation
+    to a subset of the parameters.
 
     Parameters
     ----------
@@ -261,6 +316,19 @@ class CombinedTransform(TransformBase):
         self.transforms = transforms
         self.param_idx = param_idx
         super().__init__(transforms=transforms, param_idx=param_idx)
+        # Stringify keyword arguments for JSON serialization
+        transform_str = []
+        for inst in transforms:
+            for key in avail_transform:
+                if isinstance(inst, avail_transform[key]):
+                    name = key
+                    break
+            inst_kwargs = inst.jsonable_kwargs
+            transform_str.append({"name": name, "kwargs": inst_kwargs})
+        self._kwargs = {
+            "transforms": transform_str,
+            "param_idx": [list(p) for p in param_idx],
+        }
 
     def transform(self, x):
         """Perform parameter transformation to the transformed space.
@@ -275,9 +343,9 @@ class CombinedTransform(TransformBase):
         np.ndarray
             Parameter values in transformed space.
         """
-        params = []
+        params = copy.deepcopy(x)
         for transform, idx in zip(self.transforms, self.param_idx):
-            params = np.append(params, transform.transform(x[idx]))
+            params[idx] = transform.transform(x[idx])
         return params
 
     def inverse_transform(self, x):
@@ -293,14 +361,87 @@ class CombinedTransform(TransformBase):
         np.ndarray
             Parameter values in the original parameterization.
         """
-        params = []
+        params = copy.deepcopy(x)
         for transform, idx in zip(self.transforms, self.param_idx):
-            params = np.append(params, transform.inverse_transform(x[idx]))
+            params[idx] = transform.inverse_transform(x[idx])
+        return params
+
+
+class ComposedTransform(TransformBase):
+    """A class that combines multiple transformations by composing the transformations.
+    That is, given a list of transformations, the first transformation in the list is
+    applied to the input parameters, then the second transformation is applied to the
+    output of the first transformation, and so on.
+
+    Notes
+    -----
+    The order in which the transformation is applied follows the same order as the a
+    processing pipeline. That is, the first transformation is applied to the input
+    parameters, then the second transformation is applied to the output of the first
+    transformation, and so on.
+
+    Parameters
+    ----------
+    transforms: list
+        List of transformation class instances to combine.
+    """
+
+    def __init__(self, transforms):
+        self.transforms = transforms
+        super().__init__(transforms=transforms)
+        # Stringify keyword arguments for JSON serialization
+        self._kwargs = {"transforms": []}
+        for inst in transforms:
+            for key in avail_transform:
+                if isinstance(inst, avail_transform[key]):
+                    name = key
+                    break
+            inst_kwargs = inst.jsonable_kwargs
+            self._kwargs["transforms"].append({"name": name, "kwargs": inst_kwargs})
+
+    def transform(self, x):
+        """Perform parameter transformation to the transformed space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in transformed space.
+        """
+        params = copy.deepcopy(x)
+        for transform in self.transforms:
+            params = transform.transform(params)
+        return params
+
+    def inverse_transform(self, x):
+        """Invert the transformation back to the original space.
+
+        Parameters
+        ----------
+        x: np.ndarray
+            Parameter values to inverse transform.
+
+        Returns
+        -------
+        np.ndarray
+            Parameter values in the original parameterization.
+        """
+        params = copy.deepcopy(x)
+        # We need to invert the order of the transformation for the inverse
+        # transformation
+        for transform in self.transforms[::-1]:
+            params = transform.inverse_transform(params)
         return params
 
 
 avail_transform = {
-    "affine": AffineTransform,
-    "log": LogTransform,
-    "combined": CombinedTransform,
+    "AffineTransform": AffineTransform,
+    "LogTransform": LogTransform,
+    "AtanhTransform": AtanhTransform,
+    "SplitTransform": SplitTransform,
+    "ComposedTransform": ComposedTransform,
 }
