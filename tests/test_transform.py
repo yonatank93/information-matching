@@ -8,6 +8,7 @@ from information_matching.transform import (
     AtanhTransform,
     SplitTransform,
     ComposedTransform,
+    transform_builder,
 )
 
 np.random.seed(1)
@@ -110,8 +111,51 @@ def test_func_wrapper():
     )
 
 
+def test_transform_builder():
+    """Test transform_builder function."""
+    # Dictionaries for the transformation classes
+    transform_affine_dict = {
+        "transform_type": "AffineTransform",
+        "transform_args": {"a": A, "x0": x0, "b": b},
+    }
+    transform_log_dict = {
+        "transform_type": "LogTransform",
+        "transform_args": {"sign": sign},
+    }
+    transform_split_dict = {
+        "transform_type": "SplitTransform",
+        "transform_args": {
+            "transform_list": [transform_log_dict, transform_affine_dict],
+            "param_idx": param_idx,
+        },
+    }
+    transform_composed_dict = {
+        "transform_type": "ComposedTransform",
+        "transform_args": {"transform_list": [transform_log_dict, transform_affine_dict]},
+    }
+
+    # Test if the transform_builder function returns the correct type of transformation
+    # class
+    assert isinstance(transform_builder(**transform_affine_dict), AffineTransform)
+    assert isinstance(transform_builder(**transform_log_dict), LogTransform)
+    assert isinstance(transform_builder(**transform_split_dict), SplitTransform)
+    assert isinstance(transform_builder(**transform_composed_dict), ComposedTransform)
+
+    # Test if the transform_builder function create the correct transformation class by
+    # comparing the forward transformation
+    assert np.allclose(transform_builder(**transform_affine_dict)(x), transform_affine(x))
+    assert np.allclose(transform_builder(**transform_log_dict)(x), transform_log(x))
+    assert np.allclose(
+        transform_builder(**transform_split_dict)(xlong), transform_split(xlong)
+    )
+    assert np.allclose(
+        transform_builder(**transform_composed_dict)(x), transform_composed(x)
+    )
+
+
 if __name__ == "__main__":
     test_transform()
     test_transform2()
     test_inverse_transform()
     test_func_wrapper()
+    test_transform_builder()
