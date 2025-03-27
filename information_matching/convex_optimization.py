@@ -4,11 +4,20 @@ non-zero weights from the convex optimization output.
 """
 
 from copy import deepcopy
+import warnings
 import numpy as np
 import cvxpy as cp
 
 default_kwargs = dict(solver=cp.SDPA)
 eps = np.finfo(float).eps
+
+
+def default_obj_fn(x):
+    return cp.sum(x)
+
+
+def obj_fn_l1_norm(x):
+    return cp.norm(x, p=1)
 
 
 class ConvexOpt:
@@ -40,24 +49,42 @@ class ConvexOpt:
         The allowed upper bound for the optimal weights. This can be a single value,
         which will be broadcasted to all configurations, or a list of values for each
         configuration.
-    l1norm_obj: bool
+    l1norm_obj: bool (Deprecated)
         An option to explicitly use l1-norm for the objective function instead of just a
         sum. In theory, these are the same, given the non-negative constraint on the
         weights. However, the algorithm might explore the infeasible set, and the choice
         of objective function can affect the answer. Also note that using sum is faster.
+    obj_fn: callable obj_fn(x, **obj_fn_kwargs)
+        The objective function for weights minimization. The function should be convex
+        and derived from CVXPY. The default is the sum of the weights, which is the same
+        as l1-norm when weights are non-negative.
+    obj_fn_kwargs: dict
+        Additional keyword arguments to be passed to the objective function.
 
     Notes
     -----
-    - The information-matching calculation done here will flatten the FIMs into vectors.
+    - The information-matching calculation done here flattens the FIMs into vectors.
       Computationally, this is still the same as the original formulation.
     - The weight_scale keyword in the fim_configs argument can be used to enforce a
       sparser solution. When the weights are scaled down, the solver tends to set them to
       zero, effectively approximating an :math:`\ell_0`-norm optimization.
     - A motivation for setting upper bounds on the weights is if there is a limitation in
       the feasible accuracy of reference data collection for a given configuration.
+    - The choice of the objective function can affect the solution. For example, the
+      default objective function, the l1-norm minimization, encourages sparsity in the
+      solution. An alternative is to use l2-norm objective function, which doesn't
+      encourage sparsity.
     """
 
-    def __init__(self, fim_qoi, fim_configs, weight_upper_bound=None, l1norm_obj=False):
+    def __init__(
+        self,
+        fim_qoi,
+        fim_configs,
+        weight_upper_bound=None,
+        l1norm_obj=False,
+        obj_fn=None,
+        obj_fn_kwargs=None,
+    ):
         # Obtain the target FIM of the QoI
         self._fim_shape = self._get_fim_shape(fim_qoi)
         self.fim_qoi_vec, self.scale_qoi = self._get_target_fim_and_scale(fim_qoi)
@@ -75,8 +102,31 @@ class ConvexOpt:
             weight_upper_bound
         )
 
-        # Other settings
+        # Objective function
         self._l1norm_obj = l1norm_obj
+        if self._l1norm_obj:
+            # Depracated
+            warnings.warn(
+                "The argument '_l1norm_obj' is deprecated "
+                "and will be removed in a future release."
+                "Please use the argument `obj_fn`.",
+                DeprecationWarning,
+                stacklevel=2,  # Ensures the warning points to the caller
+            )
+        if obj_fn is None:
+            if self._l1norm_obj:
+                self._obj_fn = obj_fn_l1_norm
+            else:
+                self._obj_fn = default_obj_fn
+        else:
+            self._obj_fn = obj_fn
+        if obj_fn_kwargs is None:
+            self._obj_fn_kwargs = {}
+        else:
+            self._obj_fn_kwargs = obj_fn_kwargs
+        # Check convexity of the objective function
+        if not self._check_obj_fn():
+            raise ValueError("Objective function doesn't seem to be convex.")
 
         # Construct the problem
         self._construct_problem()
@@ -307,14 +357,19 @@ class ConvexOpt:
         # Problem
         self.problem = cp.Problem(self.objective, self.constraints)
 
+    def _check_obj_fn(self):
+        """Check if the objective function is convex, which is a requirement for this
+        calculation.
+        """
+        x = cp.Variable()
+        test = self._obj_fn(x, **self._obj_fn_kwargs)
+        return test.is_convex()
+
     def _objective_fn(self):
         """Objective function of the convex optimization."""
         # Apply weight scaling factor
         scaled_weights = cp.multiply(self.wm, self.scale_weights.reshape((-1, 1)))
-        if self._l1norm_obj:
-            return cp.norm(scaled_weights, p=1)
-        else:
-            return cp.sum(scaled_weights)
+        return self._obj_fn(scaled_weights, **self._obj_fn_kwargs)
 
     def _difference_matrix(self, weights):
         """This function compute the matrix of difference between the weighted sum of the
