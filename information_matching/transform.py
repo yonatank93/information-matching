@@ -302,7 +302,7 @@ class SplitTransform(TransformBase):
 
     Parameters
     ----------
-    transforms: list
+    transform_list: list
         List of transformation class instances to combine.
 
     param_idx: list
@@ -312,18 +312,21 @@ class SplitTransform(TransformBase):
         to the list of parameters specified by `param_idx[1]`, and so on.
     """
 
-    def __init__(self, transforms, param_idx):
-        self.transforms = transforms
+    def __init__(self, transform_list, param_idx):
+        self.transform_list = transform_list
         self.param_idx = param_idx
-        super().__init__(transforms=transforms, param_idx=param_idx)
+        super().__init__(transform_list=transform_list, param_idx=param_idx)
         # Stringify keyword arguments for JSON serialization
         transform_str = []
-        for inst in transforms:
+        for inst in transform_list:
             name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
-            transform_str.append({"name": name, "kwargs": inst_kwargs})
+            transform_str.append({
+                "transform_type": name,
+                "transform_args": inst_kwargs
+            })
         self._kwargs = {
-            "transforms": transform_str,
+            "transform_list": transform_str,
             "param_idx": [list(p) for p in param_idx],
         }
 
@@ -341,7 +344,7 @@ class SplitTransform(TransformBase):
             Parameter values in transformed space.
         """
         params = copy.deepcopy(x)
-        for transform, idx in zip(self.transforms, self.param_idx):
+        for transform, idx in zip(self.transform_list, self.param_idx):
             params[idx] = transform.transform(x[idx])
         return params
 
@@ -359,7 +362,7 @@ class SplitTransform(TransformBase):
             Parameter values in the original parameterization.
         """
         params = copy.deepcopy(x)
-        for transform, idx in zip(self.transforms, self.param_idx):
+        for transform, idx in zip(self.transform_list, self.param_idx):
             params[idx] = transform.inverse_transform(x[idx])
         return params
 
@@ -379,19 +382,19 @@ class ComposedTransform(TransformBase):
 
     Parameters
     ----------
-    transforms: list
+    transform_list: list
         List of transformation class instances to combine.
     """
 
-    def __init__(self, transforms):
-        self.transforms = transforms
-        super().__init__(transforms=transforms)
+    def __init__(self, transform_list):
+        self.transform_list = transform_list
+        super().__init__(transform_list=transform_list)
         # Stringify keyword arguments for JSON serialization
-        self._kwargs = {"transforms": []}
-        for inst in transforms:
+        self._kwargs = {"transform_list": []}
+        for inst in transform_list:
             name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
-            self._kwargs["transforms"].append({
+            self._kwargs["transform_list"].append({
                 "name": name,
                 "kwargs": inst_kwargs
             })
@@ -410,7 +413,7 @@ class ComposedTransform(TransformBase):
             Parameter values in transformed space.
         """
         params = copy.deepcopy(x)
-        for transform in self.transforms:
+        for transform in self.transform_list:
             params = transform.transform(params)
         return params
 
@@ -430,7 +433,7 @@ class ComposedTransform(TransformBase):
         params = copy.deepcopy(x)
         # We need to invert the order of the transformation for the inverse
         # transformation
-        for transform in self.transforms[::-1]:
+        for transform in self.transform_list[::-1]:
             params = transform.inverse_transform(params)
         return params
 
@@ -442,3 +445,41 @@ avail_transform = {
     "SplitTransform": SplitTransform,
     "ComposedTransform": ComposedTransform,
 }
+
+
+def transform_builder(transform_type, transform_args):
+    """Construct a transformation class instance from the given string type and a
+    dictionary arguments.
+
+    Parameters
+    ----------
+    transform_type: str
+        Type of transformation to construct. Check the available transformations by
+        looking at the keys of the `avail_transform` dictionary
+
+    transform_args: dict
+        Keyword arguments to pass to the transformation class.
+
+    Returns
+    -------
+    transform: TransformBase
+        Transformation class instance.
+    """
+    if transform_type not in avail_transform:
+        raise ValueError(f"Unknown transformation type: {transform_type}")
+    elif transform_type in ["SplitTransform"]:
+        return avail_transform[transform_type](
+            transform_list=[
+                transform_builder(inst["transform_type"],
+                                  inst["transform_args"])
+                for inst in transform_args["transform_list"]
+            ],
+            param_idx=transform_args["param_idx"],
+        )
+    elif transform_type == "ComposedTransform":
+        return avail_transform[transform_type](transform_list=[
+            transform_builder(inst["transform_type"], inst["transform_args"])
+            for inst in transform_args["transform_list"]
+        ])
+    else:
+        return avail_transform[transform_type](**transform_args)
