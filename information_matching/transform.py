@@ -319,10 +319,7 @@ class SplitTransform(TransformBase):
         # Stringify keyword arguments for JSON serialization
         transform_str = []
         for inst in transforms:
-            for key in avail_transform:
-                if isinstance(inst, avail_transform[key]):
-                    name = key
-                    break
+            name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
             transform_str.append({"name": name, "kwargs": inst_kwargs})
         self._kwargs = {
@@ -392,12 +389,12 @@ class ComposedTransform(TransformBase):
         # Stringify keyword arguments for JSON serialization
         self._kwargs = {"transforms": []}
         for inst in transforms:
-            for key in avail_transform:
-                if isinstance(inst, avail_transform[key]):
-                    name = key
-                    break
+            name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
-            self._kwargs["transforms"].append({"name": name, "kwargs": inst_kwargs})
+            self._kwargs["transforms"].append({
+                "name": name,
+                "kwargs": inst_kwargs
+            })
 
     def transform(self, x):
         """Perform parameter transformation to the transformed space.
