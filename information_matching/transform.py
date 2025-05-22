@@ -321,10 +321,7 @@ class SplitTransform(TransformBase):
         for inst in transform_list:
             name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
-            transform_str.append({
-                "transform_type": name,
-                "transform_args": inst_kwargs
-            })
+            transform_str.append({"transform_type": name, "transform_args": inst_kwargs})
         self._kwargs = {
             "transform_list": transform_str,
             "param_idx": [list(p) for p in param_idx],
@@ -394,10 +391,9 @@ class ComposedTransform(TransformBase):
         for inst in transform_list:
             name = inst.__class__.__name__
             inst_kwargs = inst.jsonable_kwargs
-            self._kwargs["transform_list"].append({
-                "name": name,
-                "kwargs": inst_kwargs
-            })
+            self._kwargs["transform_list"].append(
+                {"transform_type": name, "transform_args": inst_kwargs}
+            )
 
     def transform(self, x):
         """Perform parameter transformation to the transformed space.
@@ -470,16 +466,17 @@ def transform_builder(transform_type, transform_args):
     elif transform_type in ["SplitTransform"]:
         return avail_transform[transform_type](
             transform_list=[
-                transform_builder(inst["transform_type"],
-                                  inst["transform_args"])
+                transform_builder(inst["transform_type"], inst["transform_args"])
                 for inst in transform_args["transform_list"]
             ],
             param_idx=transform_args["param_idx"],
         )
     elif transform_type == "ComposedTransform":
-        return avail_transform[transform_type](transform_list=[
-            transform_builder(inst["transform_type"], inst["transform_args"])
-            for inst in transform_args["transform_list"]
-        ])
+        return avail_transform[transform_type](
+            transform_list=[
+                transform_builder(inst["transform_type"], inst["transform_args"])
+                for inst in transform_args["transform_list"]
+            ]
+        )
     else:
         return avail_transform[transform_type](**transform_args)
