@@ -1,3 +1,4 @@
+import warnings
 from concurrent.futures import ThreadPoolExecutor as Pool
 import numpy as np
 
@@ -22,18 +23,41 @@ class FIM_fd(FIMBase):
         estimation, the available methods are: "FD", "FD2", "FD3", "FD4", "CD", "CD4".
     h: float or list (nparams,)
         Step size to use in the finite difference derivative.
-    nprocs: int
+    pool: object with a `map` method (optional)
+        An object with map method for parallelization, e.g., ``multiprocessing.Pool``
+        or ``concurrent.futures.ThreadPoolExecutor``. If not provided, the Jacobian will
+        be computed in serial.
+    nprocs: int (deprecated)
         Number of parallel processes to use in the Jacobian computation. Parallelization
         utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
     def __init__(
-        self, model, transform=None, inverse_transform=None, method="FD", h=0.1, nprocs=1
+        self,
+        model,
+        transform=None,
+        inverse_transform=None,
+        method="FD",
+        h=0.1,
+        pool=None,
+        nprocs=None,
     ):
         super().__init__(model, transform, inverse_transform)
         self._method = method
         self._h = h
-        self._nprocs = nprocs
+        # Deprecated nprocs argument in favor of pool
+        if nprocs is not None:
+            warnings.warn(
+                "nprocs is deprecated, use pool instead. "
+                "nprocs will be removed in the future.",
+                DeprecationWarning,
+            )
+            pool = Pool(nprocs)
+        self._pool = pool
+        if pool is None:
+            self.map_fn = map
+        else:
+            self.map_fn = pool.map
 
     def _model_args_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
@@ -79,11 +103,7 @@ class FIM_fd(FIMBase):
         # Generate perturbed parameters set that we use in derivative estimation
         params_set = finitediff.generate_params_set()
         # Iterate over this parameter set and evaluate the model
-        if self._nprocs == 1:  # Just in case if the function is not picklable
-            results_list = [fn(p) for p in params_set.values()]
-        else:
-            with Pool(self._nprocs) as p:
-                results_list = p.map(fn, params_set.values())
+        results_list = list(self.map_fn(fn, params_set.values()))
         # Convert the results list to dictionary that can be input to
         # finitediff.estimate_derivative
         predictions_set = {key: preds for key, preds in zip(params_set, results_list)}
