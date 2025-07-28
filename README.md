@@ -76,7 +76,19 @@ those examples.
 
 ## How to cite
 
-We are working on publishing a paper about this method.
+If you use this package, please cite our accompanying preprint:
+
+```
+@article{information_matching,
+  title     = {An information-matching approach to optimal experimental design and active learning},
+  author    = {Kurniawan, Yonatan and Neilsen, Tracianne B. and Francis, Benjamin L. and Stankovic, Alex M. and Wen, Mingjian and Nikiforov, Ilia and Tadmor, Ellad B. and Bulatov, Vasily V. and Lordi, Vincenzo and Transtrum, Mark K.},
+  journal   = {arXiv preprint arXiv:2411.02740},
+  year      = {2024},
+  month     = {Nov},
+  url       = {https://arxiv.org/abs/2411.02740},
+  doi       = {10.48550/arXiv.2411.02740}
+}
+```
 
 
 
