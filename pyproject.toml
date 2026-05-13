@@ -19,6 +19,8 @@ authors = [
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "numpy",
     "scipy",
