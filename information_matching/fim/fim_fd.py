@@ -32,7 +32,7 @@ class FIM_fd(FIMBase):
         utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
-    def __init__(self, model, transform=None, method="FD", h=0.1, pool=None, nprocs=None):
+    def __init__(self, model, transform=None, method="CD", h=0.1, pool=None, nprocs=None):
         super().__init__(model, transform)
         self._method = method
         self._h = h

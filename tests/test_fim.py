@@ -57,9 +57,9 @@ def test_finitediff():
 def test_fim_fd():
     h = 0.01
     pool = ThreadPoolExecutor(2)
-    fim_fn = FIM_fd(fn, method="CD", h=h, pool=pool)
+    fim_fn = FIM_fd(fn, h=h, pool=pool)
     # Test the Jacobian value
-    # The first derivative error should be of order h^2, since we are using CD
+    # The first derivative error should be of order h^2, since we are using CD (default)
     jac_fd = fim_fn.Jacobian(xlist, tlist)
     assert np.all(np.abs((jac_fd - jac_truth) / jac_truth) < h**2)
     # Test the FIM value
