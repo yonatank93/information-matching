@@ -57,6 +57,12 @@ class FIM_linear(FIMBase):
         if self._idx_list is not None:
             V = V[:, self._idx_list]
 
+        def model_args_wrapper(params, *args, **kwargs):
+            if len(args) == 0 and len(kwargs) == 0:
+                return self._model_wrapper(params)
+            else:
+                return self._model_wrapper(params, *args, **kwargs)
+
         # Generate the design matrix
-        jac = list(self.map_fn(self._model_wrapper, V.T))
+        jac = list(self.map_fn(model_args_wrapper, V.T))
         return np.array(jac).T
