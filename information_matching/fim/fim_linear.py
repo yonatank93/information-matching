@@ -1,4 +1,3 @@
-from multiprocessing import Pool
 import numpy as np
 
 from .fim_base import FIMBase
@@ -27,7 +26,7 @@ class FIM_linear(FIMBase):
     """
 
     def __init__(self, model, idx_list=None, pool=None):
-        super().__init__(model, None, None)
+        super().__init__(model, None)
         self._idx_list = idx_list
         self._pool = pool
         if pool is None:

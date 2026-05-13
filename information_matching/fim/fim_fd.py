@@ -4,6 +4,7 @@ import numpy as np
 
 from .fim_base import FIMBase
 from .finitediff import FiniteDifference, avail_method
+from ..transform import TransformBase
 
 
 class FIM_fd(FIMBase):
@@ -13,11 +14,10 @@ class FIM_fd(FIMBase):
     ----------
     model: callable ``model(x, **kwargs)``
         A function that we will evaluate the derivative of.
-    transform: callable ``transform(x)``
-        A function to perform transformation from the parameterization of the
-        model to what ever parameterization we want to use.
-    inverse_transform: callable ``inverse_transform(x)``
-        This is the inverse of transformation function above.
+    transform: TransformBase, optional
+        A transformation class instance with ``transform(x)`` and
+        ``inverse_transform(x)`` methods for transforming the parameters in the
+        Jacobian/FIM calculation.
     method: str
         A string that indicates the finite difference method to use in the derivative
         estimation, the available methods are: "FD", "FD2", "FD3", "FD4", "CD", "CD4".
@@ -32,17 +32,8 @@ class FIM_fd(FIMBase):
         utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
-    def __init__(
-        self,
-        model,
-        transform=None,
-        inverse_transform=None,
-        method="FD",
-        h=0.1,
-        pool=None,
-        nprocs=None,
-    ):
-        super().__init__(model, transform, inverse_transform)
+    def __init__(self, model, transform=None, method="FD", h=0.1, pool=None, nprocs=None):
+        super().__init__(model, transform)
         self._method = method
         self._h = h
         # Deprecated nprocs argument in favor of pool
@@ -87,7 +78,7 @@ class FIM_fd(FIMBase):
         # Model to compute the derivative of
         fn = self._model_args_wrapper(*args, **kwargs)
         # Apply parameter transformation
-        params = self.transform(x)
+        params = self.transform.transform(x)
         nparams = len(params)
 
         # Formatting h, we prefer to have a list of h values for each parameter, which
