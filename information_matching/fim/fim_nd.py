@@ -10,18 +10,17 @@ class FIM_nd(FIMBase):
     ----------
     model: callable ``model(x, **kwargs)``
         A function that we will evaluate the derivative of.
-    transform: callable ``transform(x)``
-        A function to perform transformation from the parameterization of the
-        model to what ever parameterization we want to use.
-    inverse_transform: callable ``inverse_transform(x)``
-        This is the inverse of transformation function above.
+    transform: TransformBase, optional
+        A transformation class instance with ``transform(x)`` and
+        ``inverse_transform(x)`` methods for transforming the parameters in the
+        Jacobian/FIM calculation.
     kwargs: dict
         Additional keyword arguments for ``numdifftools.Jacobian``.
     """
 
-    def __init__(self, model, transform=None, inverse_transform=None, **kwargs):
-        super().__init__(model, transform, inverse_transform)
-        self.jac_func = nd.Jacobian(self._model_wrapper, method="forward", **kwargs)
+    def __init__(self, model, transform=None, **kwargs):
+        super().__init__(model, transform)
+        self.jac_func = nd.Jacobian(self._model_wrapper, **kwargs)
 
     def Jacobian(self, x, *args, **kwargs):
         """Compute the Jacobian of the model, evaluated at parameter ``x``.
@@ -40,5 +39,5 @@ class FIM_nd(FIMBase):
         -------
         np.ndarray (npred, nparams)
         """
-        params = self.transform(x)
+        params = self.transform.transform(x)
         return self.jac_func(params, *args, **kwargs)

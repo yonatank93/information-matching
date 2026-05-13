@@ -76,14 +76,30 @@ def test_weight_upper_bound():
     bound.
     """
     fim_candidates = {"1": fim_candidate_1, "2": fim_candidate_2, "3": fim_candidate_3}
-    w_ub = 3  # Upper bound for the optimal weights
+    # Unbounded case
+    for w_ub in [None, "inf", np.inf]:
+        cvxopt = ConvexOpt(fim_target, fim_candidates, weight_upper_bound=w_ub)
+        cvxopt.solve()
+        opt_candidate = cvxopt.get_config_weights(1e-6, 1e-6)
+        # This optimization should be successful, and the weights should be lower than
+        # the upper bound
+        for val in opt_candidate.values():
+            assert val < np.inf, "Optimal weight exceeds upper bound"
+
+    # Scalar finite weight upper bound
+    w_ub = 3
     cvxopt = ConvexOpt(fim_target, fim_candidates, weight_upper_bound=w_ub)
     cvxopt.solve()
     opt_candidate = cvxopt.get_config_weights(1e-6, 1e-6)
-    # This optimization should be successful, and the weights should be lower than the
-    # upper bound
     for val in opt_candidate.values():
-        assert val <= w_ub, "Optimal weight exceeds upper bound"
+        assert val < w_ub, "Optimal weight exceeds upper bound"
+    # Vector weight upper bound
+    w_ub = np.full(len(fim_candidates), 3)
+    cvxopt = ConvexOpt(fim_target, fim_candidates, weight_upper_bound=w_ub)
+    cvxopt.solve()
+    opt_candidate = cvxopt.get_config_weights(1e-6, 1e-6)
+    for val in opt_candidate.values():
+        assert all(val < w_ub), "Optimal weight exceeds upper bound"
 
 
 def test_different_objective_fn():

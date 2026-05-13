@@ -20,7 +20,9 @@ Design (OED) and Active Learning (AL) tasks.
 ``` bash
 git clone https://github.com/yonatank93/information-matching.git
 cd information-matching
-pip install -e .
+python -m pip install .              # For a minimal installation
+python -m pip install ".[examples]"  # For running example notebooks and scripts
+python -m pip install -e ".[dev]"    # For development and testing
 ```
 
 
@@ -76,7 +78,23 @@ those examples.
 
 ## How to cite
 
-We are working on publishing a paper about this method.
+If you use this package, please cite our accompanying paper:
+
+```
+@article{information_matching,
+  title		= {An information-matching approach to optimal experimental design and active learning}, 
+  volume	= {128},
+  rights	= {All rights reserved},
+  ISSN		= {0003-6951},
+  DOI		= {10.1063/5.0296026},
+  number	= {6},
+  journal	= {Applied Physics Letters},
+  author	= {Kurniawan, Yonatan and Neilsen, Tracianne B. and Francis, Benjamin L. and Stankovic, Alex M. and Wen, Mingjian and Nikiforov, Ilia and Tadmor, Ellad B. and Bulatov, Vasily V. and Lordi, Vincenzo and Transtrum, Mark K.},
+  year		= {2026},
+  month		= feb,
+  pages		= {064104}
+}
+```
 
 
 

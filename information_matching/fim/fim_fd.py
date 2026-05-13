@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor as Pool
 import numpy as np
 
 from .fim_base import FIMBase
@@ -12,28 +11,35 @@ class FIM_fd(FIMBase):
     ----------
     model: callable ``model(x, **kwargs)``
         A function that we will evaluate the derivative of.
-    transform: callable ``transform(x)``
-        A function to perform transformation from the parameterization of the
-        model to what ever parameterization we want to use.
-    inverse_transform: callable ``inverse_transform(x)``
-        This is the inverse of transformation function above.
+    transform: TransformBase, optional
+        A transformation class instance with ``transform(x)`` and
+        ``inverse_transform(x)`` methods for transforming the parameters in the
+        Jacobian/FIM calculation.
     method: str
         A string that indicates the finite difference method to use in the derivative
         estimation, the available methods are: "FD", "FD2", "FD3", "FD4", "CD", "CD4".
     h: float or list (nparams,)
         Step size to use in the finite difference derivative.
-    nprocs: int
-        Number of parallel processes to use in the Jacobian computation. Parallelization
-        utilizes ``concurrent.futures.ThreadPoolExecutor``.
+    pool: object with a `map` method (optional)
+        An object with map method for parallelization, e.g., ``multiprocessing.Pool``
+        or ``concurrent.futures.ThreadPoolExecutor``. If not provided, the Jacobian will
+        be computed in serial.
     """
 
-    def __init__(
-        self, model, transform=None, inverse_transform=None, method="FD", h=0.1, nprocs=1
-    ):
-        super().__init__(model, transform, inverse_transform)
-        self._method = method
+    def __init__(self, model, transform=None, method="CD", h=0.1, pool=None):
+        if method.upper() not in avail_method:
+            raise ValueError(
+                f"Method {method} is not available. Please choose from {avail_method}."
+            )
+
+        super().__init__(model, transform)
+        self._method = method.upper()
         self._h = h
-        self._nprocs = nprocs
+        self._pool = pool
+        if pool is None:
+            self.map_fn = map
+        else:
+            self.map_fn = pool.map
 
     def _model_args_wrapper(self, *args, **kwargs):
         """A wrapper function that inserts the keyword arguments to the model."""
@@ -63,7 +69,7 @@ class FIM_fd(FIMBase):
         # Model to compute the derivative of
         fn = self._model_args_wrapper(*args, **kwargs)
         # Apply parameter transformation
-        params = self.transform(x)
+        params = self.transform.transform(x)
         nparams = len(params)
 
         # Formatting h, we prefer to have a list of h values for each parameter, which
@@ -79,11 +85,7 @@ class FIM_fd(FIMBase):
         # Generate perturbed parameters set that we use in derivative estimation
         params_set = finitediff.generate_params_set()
         # Iterate over this parameter set and evaluate the model
-        if self._nprocs == 1:  # Just in case if the function is not picklable
-            results_list = [fn(p) for p in params_set.values()]
-        else:
-            with Pool(self._nprocs) as p:
-                results_list = p.map(fn, params_set.values())
+        results_list = list(self.map_fn(fn, params_set.values()))
         # Convert the results list to dictionary that can be input to
         # finitediff.estimate_derivative
         predictions_set = {key: preds for key, preds in zip(params_set, results_list)}

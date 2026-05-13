@@ -1,0 +1,85 @@
+[build-system]
+requires = [
+    "setuptools>=80",
+    "wheel",
+    "setuptools-scm>=8,<9",
+]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "information-matching"
+dynamic = ["version"]
+description = "Information-matching method of optimal experimental design and active learning"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Yonatan Kurniawan", email = "kurniawanyo@outlook.com" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "numdifftools",
+    "cvxpy",
+    "sdpa-python",
+    "wget",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/yonatank93/information-matching"
+Repository = "https://github.com/yonatank93/information-matching"
+
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+]
+
+examples = [
+    "jupyter",
+    "matplotlib",
+    "pyqt5",
+    "svgpathtools",
+    "svgpath2mpl",
+    "ase @ git+https://gitlab.com/ase/ase.git@8af1a1f1a2c904a553038965014a0147b08c3789",
+    "kimpy",
+    "kliff==0.4.1",
+    "geodesicLM",
+    "kim_python_utils @ git+https://github.com/openkim/kim-python-utils",
+    "emcee",
+    "ptemcee @ git+https://github.com/yonatank93/ptemcee.git@enhance_v1.0.0",
+    "corner",
+]
+
+dev = [
+    "pytest",
+    "jupyter",
+    "matplotlib",
+    "pyqt5",
+]
+
+
+[tool.setuptools]
+include-package-data = true
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = [
+    "tests*",
+    "examples*",
+    "theory*",
+]
+
+
+[tool.setuptools_scm]
+version_file = "information_matching/_version.py"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
