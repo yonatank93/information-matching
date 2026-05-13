@@ -16,10 +16,16 @@ from information_matching.transform import AffineTransform
 
 
 # Define functions/models to test the FIM methods
+np.random.seed(1)
 xlist = np.random.uniform(0, 1, 5)  # Parameters
 tlist = np.random.uniform(0, 1, 10)  # Inputs
+
+# The following is the analytic derivative
+jac_truth = np.array([tlist * np.exp(x * tlist) for x in xlist]).T
+fim_truth = jac_truth.T @ jac_truth
 nparams = len(xlist)
 design_matrix = np.array([tlist**ii for ii in range(nparams)]).T
+idx = np.random.choice(range(nparams), size=nparams - 2, replace=False)
 
 
 def fn(x, t):
@@ -30,14 +36,6 @@ def fn(x, t):
 def fn_linear(x):
     """Linear test function."""
     return design_matrix @ x
-
-
-# The following is the analytic derivative
-jac_truth = np.array([tlist * np.exp(x * tlist) for x in xlist]).T
-fim_truth = jac_truth.T @ jac_truth
-nparams = len(xlist)
-idx = np.random.choice(range(nparams), size=nparams - 2, replace=False)
-design_matrix = np.array([tlist**ii for ii in range(nparams)]).T
 
 
 def test_finitediff():
@@ -56,16 +54,16 @@ def test_finitediff():
 
 def test_fim_fd():
     h = 0.01
-    pool = ThreadPoolExecutor(2)
-    fim_fn = FIM_fd(fn, h=h, pool=pool)
-    # Test the Jacobian value
-    # The first derivative error should be of order h^2, since we are using CD (default)
-    jac_fd = fim_fn.Jacobian(xlist, tlist)
-    assert np.all(np.abs((jac_fd - jac_truth) / jac_truth) < h**2)
-    # Test the FIM value
-    # The error should be of order h
-    fim_fd = fim_fn(xlist, tlist)
-    assert np.all(np.abs((fim_fd - fim_truth) / fim_truth) < h)
+    with ThreadPoolExecutor(2) as pool:
+        fim_fn = FIM_fd(fn, h=h, pool=pool)
+        # Test the Jacobian value
+        # The first derivative error should be of order h^2, since we are using CD
+        jac_fd = fim_fn.Jacobian(xlist, tlist)
+        assert np.all(np.abs((jac_fd - jac_truth) / jac_truth) < h**2)
+        # Test the FIM value
+        # The error should be of order h
+        fim_fd = fim_fn(xlist, tlist)
+        assert np.all(np.abs((fim_fd - fim_truth) / fim_truth) < h)
 
 
 def test_fim_nd():
@@ -80,31 +78,31 @@ def test_fim_nd():
 
 
 def test_fim_linear():
-    pool = ThreadPoolExecutor(2)
-    fim_fn = FIM_linear(fn_linear, idx_list=idx, pool=pool)
-    jac_linear = fim_fn.Jacobian(xlist, tlist)
-    # Test the Jacobian - The Jacobian should be the same as the design matrix
-    assert np.allclose(jac_linear, design_matrix[:, idx])
-    # Test the FIM value
-    fim_nd = fim_fn(xlist, tlist)
-    D = design_matrix[:, idx]
-    assert np.allclose(fim_nd, D.T @ D)
+    with ThreadPoolExecutor(2) as pool:
+        fim_fn = FIM_linear(fn_linear, idx_list=idx, pool=pool)
+        jac_linear = fim_fn.Jacobian(xlist)
+        # Test the Jacobian - The Jacobian should be the same as the design matrix
+        assert np.allclose(jac_linear, design_matrix[:, idx])
+        # Test the FIM value
+        fim_nd = fim_fn(xlist)
+        D = design_matrix[:, idx]
+        assert np.allclose(fim_nd, D.T @ D)
 
 
 def test_fim_with_transformation():
     # Test that the FIM methods can handle a transformation of the parameters
-    transform = AffineTransform()
+    b = np.random.uniform(0, 1, len(xlist))
     # Finite difference
-    fim_fd = FIM_fd(fn)(xlist, tlist)
-    fim_fd_transform = FIM_fd(fn, transform=transform)(xlist, tlist)
+    fim_fd = FIM_fd(fn_linear)(xlist)
+    fim_fd_transform = FIM_fd(fn_linear, transform=AffineTransform(b=b))(xlist)
     assert np.allclose(fim_fd, fim_fd_transform, atol=1e-4, rtol=1e-4)
     # Numdifftools
-    fim_nd = FIM_nd(fn)(xlist, tlist)
-    fim_nd_transform = FIM_nd(fn, transform=transform)(xlist, tlist)
+    fim_nd = FIM_nd(fn_linear)(xlist)
+    fim_nd_transform = FIM_nd(fn_linear, transform=AffineTransform(b=b))(xlist)
     assert np.allclose(fim_nd, fim_nd_transform, atol=1e-4, rtol=1e-4)
     # # Julia
-    # fim_jl = FIM_jl(fn)(xlist, tlist)
-    # fim_jl_transform = FIM_jl(fn, transform=transform)(xlist, tlist)
+    # fim_jl = FIM_jl(fn_linear)(xlist)
+    # fim_jl_transform = FIM_jl(fn_linear, transform=AffineTransform(b=b))(xlist)
     # assert np.allclose(fim_jl, fim_jl_transform, atol=1e-4, rtol=1e-4)
 
 
