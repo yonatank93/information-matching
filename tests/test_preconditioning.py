@@ -20,7 +20,8 @@ def test_array():
     # Use preconditioner
     test_val = preconditioner(I, "frobenius")
 
-    assert ref == test_val
+    for key in ref:
+        assert np.all(test_val[key] == ref[key])
 
 
 def test_dict():
@@ -69,7 +70,7 @@ def test_exception():
         dict2 = {"fim": I1, "fim_scale": 1 / norm1}
         preconditioner(dict2, "frobenius")
     with pytest.raises(ValueError):
-        dict3 = {0: {"fim": I1}, 1: {"fim": I2, "fim_scale": 1 / norm2}}
+        dict2 = {0: {"fim": I1}, 1: {"fim": I2, "fim_scale": 1 / norm2}}
         preconditioner(dict2, "frobenius")
 
 

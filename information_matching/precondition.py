@@ -6,6 +6,7 @@ What are some preconditioning options:
 * Maximum Frobenius norm scaling - Scale all FIMs uniformly by the largest Frobenius norm
 """
 
+from copy import copy
 import numpy as np
 
 
@@ -44,6 +45,7 @@ def preconditioner(fim, scale_type, pad=0.0):
     dict
         The dictionary containing the FIMs and their scaling factors.
     """
+    fim = copy(fim)
     # Check the scale_type argument
     if scale_type.lower() not in avail_scale_type:
         raise ValueError(
@@ -75,7 +77,7 @@ def preconditioner(fim, scale_type, pad=0.0):
                     # Let's also check if the dictionary contains scaling factor already.
                     # If so, raise an error since we don't want to overwrite the scaling
                     # factor.
-                    if "fim_scale" in fim:
+                    if "fim_scale" in fim[config_id]:
                         raise ValueError(
                             "The dictionary already contain scaling factor "
                             "('fim_scale' key)"
