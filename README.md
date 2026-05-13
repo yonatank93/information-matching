@@ -21,7 +21,6 @@ Design (OED) and Active Learning (AL) tasks.
 git clone https://github.com/yonatank93/information-matching.git
 cd information-matching
 python -m pip install .              # For a minimal installation
-python -m pip install ".[examples]"  # For running example notebooks and scripts
 python -m pip install -e ".[dev]"    # For development and testing
 ```
 

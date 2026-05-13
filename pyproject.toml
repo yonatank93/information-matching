@@ -41,22 +41,6 @@ test = [
     "pytest",
 ]
 
-examples = [
-    "jupyter",
-    "matplotlib",
-    "pyqt5",
-    "svgpathtools",
-    "svgpath2mpl",
-    "ase @ git+https://gitlab.com/ase/ase.git@8af1a1f1a2c904a553038965014a0147b08c3789",
-    "kimpy",
-    "kliff==0.4.1",
-    "geodesicLM",
-    "kim_python_utils @ git+https://github.com/openkim/kim-python-utils",
-    "emcee",
-    "ptemcee @ git+https://github.com/yonatank93/ptemcee.git@enhance_v1.0.0",
-    "corner",
-]
-
 dev = [
     "pytest",
     "jupyter",
