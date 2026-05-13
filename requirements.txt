@@ -1,6 +1,0 @@
-numpy
-scipy
-numdifftools
-cvxpy
-sdpa-python
-wget
