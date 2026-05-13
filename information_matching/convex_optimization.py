@@ -318,27 +318,37 @@ class ConvexOpt:
         """Compute the scaled weight upper bound, so that it won't be affected with the
         choice of FIM scaling factors.
         """
-        if weight_upper_bound in [None, np.inf, "inf"]:
+        # No upper bound
+        if weight_upper_bound is None:
             return None
-        else:
-            if np.isscalar(weight_upper_bound):
-                # If a scalar is given, broadcast it to all configurations
-                weight_upper_bound = weight_upper_bound * np.ones(self.nconfigs)
-            else:
-                # If a list is given, check if the length is correct
-                if len(weight_upper_bound) != self.nconfigs:
-                    raise ValueError(
-                        "The length of weight_upper_bound should be the same as the "
-                        "number of configurations"
-                    )
-            # If the length is correct, convert it to an array
-            weight_upper_bound = np.array(weight_upper_bound)
-
-            # Scale the upper bounds
-            scaled_weight_upper_bound = (
-                weight_upper_bound * self.scale_qoi / self.scale_conf
+        if isinstance(weight_upper_bound, str):
+            if weight_upper_bound.lower() == "inf":
+                return None
+            raise ValueError(
+                "weight_upper_bound should be None, np.inf, 'inf', a scalar, "
+                "or an array-like object."
             )
-            return scaled_weight_upper_bound.reshape((-1, 1))
+
+        # Convert input to array early
+        weight_upper_bound = np.asarray(weight_upper_bound, dtype=float)
+        # Scalar case, including np.array(1.0)
+        if weight_upper_bound.ndim == 0:
+            if np.isposinf(weight_upper_bound):
+                # No upper bound
+                return None
+            # Same upper bound for all configurations
+            weight_upper_bound = np.full(self.nconfigs, weight_upper_bound)
+        else:
+            if len(weight_upper_bound) != self.nconfigs:
+                raise ValueError(
+                    "The length of weight_upper_bound should be the same as the "
+                    "number of configurations."
+                )
+
+        # Rescale to account for the FIM scaling factors, so that the upper bound is not
+        # affected by the choice of FIM scaling factors.
+        scaled_weight_upper_bound = weight_upper_bound * self.scale_qoi / self.scale_conf
+        return scaled_weight_upper_bound.reshape((-1, 1))
 
     def _construct_problem(self):
         """Formulate the convex optimization problem."""
