@@ -4,6 +4,7 @@ import numpy as np
 
 from information_matching.fim.finitediff import FiniteDifference
 from information_matching.fim import FIM_fd, FIM_nd, FIM_linear
+from information_matching.transform import AffineTransform
 
 # try:
 #     from information_matching.fim.fim_jl import FIM_jl
@@ -90,6 +91,23 @@ def test_fim_linear():
     assert np.allclose(fim_nd, D.T @ D)
 
 
+def test_fim_with_transformation():
+    # Test that the FIM methods can handle a transformation of the parameters
+    transform = AffineTransform()
+    # Finite difference
+    fim_fd = FIM_fd(fn)(xlist, tlist)
+    fim_fd_transform = FIM_fd(fn, transform=transform)(xlist, tlist)
+    assert np.allclose(fim_fd, fim_fd_transform, atol=1e-4, rtol=1e-4)
+    # Numdifftools
+    fim_nd = FIM_nd(fn)(xlist, tlist)
+    fim_nd_transform = FIM_nd(fn, transform=transform)(xlist, tlist)
+    assert np.allclose(fim_nd, fim_nd_transform, atol=1e-4, rtol=1e-4)
+    # # Julia
+    # fim_jl = FIM_jl(fn)(xlist, tlist)
+    # fim_jl_transform = FIM_jl(fn, transform=transform)(xlist, tlist)
+    # assert np.allclose(fim_jl, fim_jl_transform, atol=1e-4, rtol=1e-4)
+
+
 # def test_fim_jl():
 #     if julia_avail:
 #         kwargs = dict(h=0.01)  # Keyword argument for Julia's Numdifftools.Jacobian
@@ -109,3 +127,4 @@ if __name__ == "__main__":
     test_fim_nd()
     test_fim_linear()
     # test_fim_jl()
+    test_fim_with_transformation()
