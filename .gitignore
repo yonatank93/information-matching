@@ -207,3 +207,6 @@ slurm*
 
 # Archived results
 archive
+
+# Versioning file
+information_matching/_version.py
