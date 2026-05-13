@@ -20,7 +20,7 @@ class FIM_nd(FIMBase):
 
     def __init__(self, model, transform=None, **kwargs):
         super().__init__(model, transform)
-        self.jac_func = nd.Jacobian(self._model_wrapper, method="forward", **kwargs)
+        self.jac_func = nd.Jacobian(self._model_wrapper, **kwargs)
 
     def Jacobian(self, x, *args, **kwargs):
         """Compute the Jacobian of the model, evaluated at parameter ``x``.
