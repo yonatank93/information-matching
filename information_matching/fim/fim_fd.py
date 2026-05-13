@@ -1,10 +1,7 @@
-import warnings
-from concurrent.futures import ThreadPoolExecutor as Pool
 import numpy as np
 
 from .fim_base import FIMBase
 from .finitediff import FiniteDifference, avail_method
-from ..transform import TransformBase
 
 
 class FIM_fd(FIMBase):
@@ -27,23 +24,17 @@ class FIM_fd(FIMBase):
         An object with map method for parallelization, e.g., ``multiprocessing.Pool``
         or ``concurrent.futures.ThreadPoolExecutor``. If not provided, the Jacobian will
         be computed in serial.
-    nprocs: int (deprecated)
-        Number of parallel processes to use in the Jacobian computation. Parallelization
-        utilizes ``concurrent.futures.ThreadPoolExecutor``.
     """
 
-    def __init__(self, model, transform=None, method="CD", h=0.1, pool=None, nprocs=None):
-        super().__init__(model, transform)
-        self._method = method
-        self._h = h
-        # Deprecated nprocs argument in favor of pool
-        if nprocs is not None:
-            warnings.warn(
-                "nprocs is deprecated, use pool instead. "
-                "nprocs will be removed in the future.",
-                DeprecationWarning,
+    def __init__(self, model, transform=None, method="CD", h=0.1, pool=None):
+        if method.upper() not in avail_method:
+            raise ValueError(
+                f"Method {method} is not available. Please choose from {avail_method}."
             )
-            pool = Pool(nprocs)
+
+        super().__init__(model, transform)
+        self._method = method.upper()
+        self._h = h
         self._pool = pool
         if pool is None:
             self.map_fn = map
